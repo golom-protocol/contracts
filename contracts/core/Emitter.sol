@@ -23,6 +23,24 @@ contract Emitter {
         bytes32 s;
     }
 
+    event NewOrder(
+        address indexed collection,
+        uint256 indexed tokenId,
+        address indexed signer,
+        uint256 orderType,
+        uint256 totalAmt,
+        Payment exchange,
+        Payment prePayment,
+        bool isERC721,
+        uint256 tokenAmt,
+        uint256 refererrAmt,
+        bytes32 root,
+        address reservedAddress,
+        uint256 nonce,
+        uint256 deadline,
+        Signature sig
+    );
+
     struct Payment {
         uint256 paymentAmt;
         address paymentAddress;
@@ -56,8 +74,6 @@ contract Emitter {
     // address exchangeAddress,
     // uint256 prePaymentAmt,
     // address prePaymentAaddress,
-
-    event NewOrder(Order o);
 
     function hashPayment(Payment calldata p) private pure returns (bytes32) {
         return
@@ -107,6 +123,28 @@ contract Emitter {
             require(signatureSigner == o.signer, 'invalid signature');
         }
 
-        emit NewOrder(o);
+        Signature memory sig = Signature(o.v, o.r, o.s);
+
+        emitOrder(o, sig);
+    }
+
+    function emitOrder(Order calldata o, Signature memory sig) internal {
+        emit NewOrder(
+            o.collection,
+            o.tokenId,
+            o.signer,
+            o.orderType,
+            o.totalAmt,
+            o.exchange,
+            o.prePayment,
+            o.isERC721,
+            o.tokenAmt,
+            o.refererrAmt,
+            o.root,
+            o.reservedAddress,
+            o.nonce,
+            o.deadline,
+            sig
+        );
     }
 }
