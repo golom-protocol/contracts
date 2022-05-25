@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
+import 'hardhat/console.sol';
+
 contract Emitter {
     bytes32 private eip712DomainHash;
     struct Order {
@@ -38,6 +40,12 @@ contract Emitter {
         );
     }
 
+    struct Signature {
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+    }
+
     event NewOrder(
         address indexed collection,
         uint256 indexed tokenId,
@@ -52,7 +60,8 @@ contract Emitter {
         uint256 tokenAmt,
         uint256 refererrAmt,
         uint256 nonce,
-        uint256 deadline
+        uint256 deadline,
+        Signature sig
     );
 
     function hashPayment(Payment memory p) private pure returns (bytes32) {
@@ -90,7 +99,7 @@ contract Emitter {
             );
     }
 
-    function emitOrder(Order memory o) internal {
+    function emitOrder(Order memory o, Signature memory sig) internal {
         emit NewOrder(
             o.collection,
             o.tokenId,
@@ -105,7 +114,8 @@ contract Emitter {
             o.tokenAmt,
             o.refererrAmt,
             o.nonce,
-            o.deadline
+            o.deadline,
+            sig
         );
     }
 
@@ -130,9 +140,14 @@ contract Emitter {
         {
             bytes32 hashStruct = hashOrder(o);
             bytes32 hash = keccak256(abi.encodePacked('\x19\x01', eip712DomainHash, hashStruct));
-            address signaturesigner = ecrecover(hash, o.v, o.r, o.s);
-            require(signaturesigner == o.signer, 'invalid signature');
+            address signatureSigner = ecrecover(hash, o.v, o.r, o.s);
+
+            console.log(signatureSigner);
+
+            require(signatureSigner == o.signer, 'invalid signature');
         }
-        emitOrder(o);
+
+        Signature memory sig = Signature(o.v, o.r, o.s);
+        emitOrder(o, sig);
     }
 }
