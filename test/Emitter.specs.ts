@@ -51,6 +51,7 @@ const types = {
         { name: 'collection', type: 'address' },
         { name: 'tokenId', type: 'uint256' },
         { name: 'signer', type: 'address' },
+        { name: 'orderType', type: 'uint256' },
         { name: 'totalAmt', type: 'uint256' },
         { name: 'exchange', type: 'payment' },
         { name: 'prePayment', type: 'payment' },
@@ -80,7 +81,7 @@ describe('Trader.sol', function () {
 
         // deploy trader contract
         golomTrader = (await (await GolomTraderArtifacts).deploy(await governance.getAddress())) as GolomTraderTypes;
-        emitter = (await await (await EmitterArtifacts).deploy()) as EmitterTypes;
+        emitter = (await await (await EmitterArtifacts).deploy(golomTrader.address)) as EmitterTypes;
         voteEscrow = (await (await VoteEscrowArtifacts).deploy()) as VoteEscrowTypes;
         rewardDistributor = (await (
             await RewardDistributorArtifacts
@@ -112,26 +113,26 @@ describe('Trader.sol', function () {
             let exchangeAmount = ethers.utils.parseEther('1'); // cut for the exchanges
             let prePaymentAmt = ethers.utils.parseEther('0.25'); // royalty cut
             let totalAmt = ethers.utils.parseEther('10');
-            let tokenId = '0';
+            let tokenId = await testErc721.current();
 
             const order = {
-                collection: testErc1155.address,
+                collection: testErc721.address,
                 tokenId: tokenId,
                 signer: await maker.getAddress(),
-                isAsk: true,
+                orderType: 0,
                 totalAmt: totalAmt,
                 exchange: { paymentAmt: exchangeAmount, paymentAddress: await exchange.getAddress() },
                 prePayment: { paymentAmt: prePaymentAmt, paymentAddress: await prepay.getAddress() },
-                isERC721: false,
-                tokenAmt: '1',
+                isERC721: true,
+                tokenAmt: 1,
                 refererrAmt: 0,
                 root: '0x0000000000000000000000000000000000000000000000000000000000000000',
                 reservedAddress: constants.AddressZero,
                 nonce: 0,
                 deadline: Date.now() + 100000,
-                v: 0,
                 r: '',
                 s: '',
+                v: 0,
             };
 
             let signature = (await maker._signTypedData(domain, types, order)).substring(2);
@@ -141,13 +142,12 @@ describe('Trader.sol', function () {
             order.v = parseInt(signature.substring(128, 130), 16);
 
             // emitter.pushOrder(order);
-            expect(emitter.pushOrder(order))
+            expect(await emitter.pushOrder(order))
                 .to.emit(emitter, 'NewOrder')
                 .withArgs(
                     order.collection,
                     order.tokenId,
                     order.signer,
-                    order.isAsk,
                     order.totalAmt,
                     order.exchange.paymentAmt,
                     order.exchange.paymentAddress,
@@ -157,7 +157,10 @@ describe('Trader.sol', function () {
                     order.tokenAmt,
                     order.refererrAmt,
                     order.nonce,
-                    order.deadline
+                    order.deadline,
+                    order.v,
+                    order.r,
+                    order.s
                 );
         });
     });
