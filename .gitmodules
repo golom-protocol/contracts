@@ -1,0 +1,12 @@
+[submodule "forge/lib/ds-test"]
+	path = forge/lib/ds-test
+	url = https://github.com/dapphub/ds-test
+[submodule "forge/hello_foundry/lib/ds-test"]
+	path = forge/hello_foundry/lib/ds-test
+	url = https://github.com/dapphub/ds-test
+[submodule "forge/hello_foundry/lib/solmate"]
+	path = forge/hello_foundry/lib/solmate
+	url = https://github.com/rari-capital/solmate
+[submodule "forge/hello_foundry/lib/forge-std"]
+	path = forge/hello_foundry/lib/forge-std
+	url = https://github.com/brockelmore/forge-std
