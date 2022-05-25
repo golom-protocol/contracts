@@ -4,9 +4,6 @@ pragma solidity 0.8.11;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 
-// TODO: Remove this
-import 'hardhat/console.sol';
-
 interface ERC721 {
     function transferFrom(
         address from,

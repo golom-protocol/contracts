@@ -26,7 +26,7 @@ async function main() {
     // should be called by governance (considering msg.sender == governance)
     await golomToken.setMinter(rewardDistributor.address);
     await golomToken.executeSetMinter();
-
+    await golomTrader.setDistributor(rewardDistributor.address)
     console.log(`🎉🎉🎉 Deployment Successful 🎉🎉🎉 `);
     console.log({
         GolomTrader: golomTrader.address,
