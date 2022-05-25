@@ -406,14 +406,11 @@ contract GolomTrader is Ownable {
             if (computedHash <= proofElement) {
                 // Hash(current computed hash + current element of the proof)
                 computedHash = _efficientHash(computedHash, proofElement);
-                console.logBytes32(computedHash);
             } else {
                 // Hash(current element of the proof + current computed hash)
                 computedHash = _efficientHash(proofElement, computedHash);
-                console.logBytes32(computedHash);
             }
         }
-        console.logBytes32(computedHash);
         if (computedHash != root) {
             revert('invalid proof');
         }

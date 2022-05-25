@@ -6,8 +6,8 @@
 import { ethers } from 'hardhat';
 
 async function main() {
-    const GOVERNANCE = '0xee06986E54157FDF85cBa935d41fd47c27ab6F82';
-    const GENESIS_START_TIME = '1653508800'; // 26th May 2022, 1.30 AM IST
+    const GOVERNANCE = '0x9aB76D1181c7723Ce4ab480Fb9610eFF7C6865Fa';
+    const GENESIS_START_TIME = '1653508800'; // 25th May 2022, 00.00 AM GST
 
     const GolomTrader = await ethers.getContractFactory('GolomTrader');
     const GolomToken = await ethers.getContractFactory('GolomToken');
