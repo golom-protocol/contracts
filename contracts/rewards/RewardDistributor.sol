@@ -6,6 +6,7 @@ pragma solidity 0.8.11;
 // gives prorata tokens to traders and exchange daily
 
 import '@openzeppelin/contracts/access/Ownable.sol';
+import 'hardhat/console.sol';
 
 interface ERC20 {
     function totalSupply() external returns (uint256);
@@ -70,7 +71,7 @@ contract RewardDistributor is Ownable {
     mapping(uint256 => uint256) public claimedUpto; // epoch upto which tokenid has claimed
     mapping(uint256 => mapping(uint256 => uint256)) public claimed; // epoch upto which tokenid has claimed
     ERC20 public rewardToken;
-    ERC20 public weth = ERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+    ERC20 public weth;
     event NewEpoch(uint256 indexed epochNo, uint256 tokenMinted, uint256 rewardStaker, uint256 previousEpochFee);
 
     uint256 genesisAmtPerDay = 10000;
@@ -80,17 +81,20 @@ contract RewardDistributor is Ownable {
 
     /// _time to start rewards
     constructor(
+        address _weth,
         uint256 _time, /// _time to start genesis period of 30 days
         address _trader,
         address _token,
         address _governance
     ) {
+        weth = ERC20(_weth);
         genesisStartTime = _time;
         genesisEndTime = genesisStartTime + genesisPeriod;
         trader = _trader;
         rewardToken = ERC20(_token);
         _transferOwnership(_governance); // set the new owner
 
+        console.log('genesisEndTimw', genesisEndTime);
         // console.log('reward', address(rewardToken));
     }
 
@@ -126,6 +130,8 @@ contract RewardDistributor is Ownable {
             return;
         }
 
+        console.log('VE', address(ve));
+
         // if 24 hours have passed since last epoch change
         if (block.timestamp > genesisEndTime + (epoch) * secsInDay) {
             // this assumes atleast 1 trade is done daily??????
@@ -160,15 +166,24 @@ contract RewardDistributor is Ownable {
     // allows genesis traders to claim all there trading rewards
     function genesisClaim(address addr, uint256[] memory epochs) public {
         uint256 reward = 0;
-        require(block.timestamp >= genesisEndTime, 'invalid');
+        console.log('epoch', epoch);
+        // require(block.timestamp >= genesisEndTime, 'invalid');
         for (uint256 index = 0; index < epochs.length; index++) {
-            require(epochs[index] < epoch);
+            console.log('current epoch', epochs[index]);
+            require(epochs[index] < epoch, 'wrong epoch');
+
+            console.log('genesis fees', genesisFeesTrader[addr][epochs[index]]);
+            console.log('numerator', reward + (rewardTrader[epochs[index]] * genesisFeesTrader[addr][epochs[index]]));
+            console.log('denominator', genesisEpochTotalFee[epochs[index]]);
+
             reward =
                 reward +
                 (rewardTrader[epochs[index]] * genesisFeesTrader[addr][epochs[index]]) /
                 genesisEpochTotalFee[epochs[index]];
             genesisFeesTrader[addr][epochs[index]] = 0;
         }
+
+        console.log('reward', reward);
         rewardToken.transfer(addr, reward);
     }
 

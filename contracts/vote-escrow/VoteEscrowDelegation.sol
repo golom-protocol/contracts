@@ -52,7 +52,8 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
     /// @notice minimum voting power required for delegation
     uint256 public MIN_VOTING_POWER_REQUIRED = 0;
 
-    constructor() {
+    constructor(address _token) {
+        token = _token;
         voter = msg.sender;
         point_history[0].blk = block.number;
         point_history[0].ts = block.timestamp;
@@ -61,10 +62,10 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         supportedInterfaces[ERC721_INTERFACE_ID] = true;
         supportedInterfaces[ERC721_METADATA_INTERFACE_ID] = true;
 
-        // // mint-ish
-        // emit Transfer(address(0), address(this), tokenId);
-        // // burn-ish
-        // emit Transfer(address(this), address(0), tokenId);
+        // mint-ish
+        emit Transfer(address(0), address(this), tokenId);
+        // burn-ish
+        emit Transfer(address(this), address(0), tokenId);
     }
 
     /// @notice Explain to an end user what this does
