@@ -3,6 +3,7 @@
 pragma solidity 0.8.11;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 
 interface ERC721 {
     function transferFrom(
@@ -36,7 +37,7 @@ interface Distributor {
     function addFee(address[2] calldata addr, uint256 fee) external;
 }
 
-contract GolomTrader is Ownable {
+contract GolomTrader is Ownable, ReentrancyGuard {
     bytes32 public immutable EIP712_DOMAIN_TYPEHASH;
     mapping(address => uint256) public nonces; // all nonces other then this nonce
     mapping(bytes32 => uint256) public filled;
@@ -92,12 +93,17 @@ contract GolomTrader is Ownable {
         // sets governance as owner
         _transferOwnership(_governance);
 
+        uint256 chainId;
+        assembly {
+            chainId := chainid()
+        }
+
         EIP712_DOMAIN_TYPEHASH = keccak256(
             abi.encode(
                 keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
                 keccak256(bytes('GOLOM.IO')),
                 keccak256(bytes('1')),
-                1,
+                chainId,
                 address(this)
             )
         );
@@ -198,7 +204,7 @@ contract GolomTrader is Ownable {
         uint256 amount,
         address referrer,
         Payment calldata p
-    ) public payable {
+    ) public payable nonReentrant {
         // check if the signed total amount has all the amounts as well as 50 basis points fee
         require(
             o.totalAmt >= o.exchange.paymentAmt + o.prePayment.paymentAmt + o.refererrAmt + (o.totalAmt * 50) / 10000,
@@ -270,7 +276,7 @@ contract GolomTrader is Ownable {
         uint256 amount,
         address referrer,
         Payment calldata p
-    ) public {
+    ) public nonReentrant {
         require(
             o.totalAmt * amount >
                 (o.exchange.paymentAmt + o.prePayment.paymentAmt + o.refererrAmt) * amount + p.paymentAmt
@@ -298,7 +304,7 @@ contract GolomTrader is Ownable {
 
     // cancel by nonce and by individual order
 
-    function cancelOrder(Order calldata o) public {
+    function cancelOrder(Order calldata o) public nonReentrant {
         require(o.signer == msg.sender);
         (, bytes32 hashStruct, ) = validateOrder(o);
         filled[hashStruct] = o.tokenAmt + 1;
@@ -309,7 +315,7 @@ contract GolomTrader is Ownable {
      * Increment a particular maker's nonce, thereby invalidating all orders that were not signed
      * with the original nonce.
      */
-    function incrementNonce() external {
+    function incrementNonce() external nonReentrant {
         uint256 newNonce = ++nonces[msg.sender];
         emit NonceIncremented(msg.sender, newNonce);
     }
@@ -327,7 +333,7 @@ contract GolomTrader is Ownable {
         bytes32[] calldata proof,
         address referrer,
         Payment calldata p
-    ) public {
+    ) public nonReentrant {
         require(o.totalAmt >= o.exchange.paymentAmt + o.prePayment.paymentAmt + o.refererrAmt);
         // require eth amt is sufficient
         if (o.reservedAddress != address(0)) {

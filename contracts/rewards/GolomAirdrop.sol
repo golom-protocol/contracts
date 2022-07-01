@@ -131,13 +131,13 @@ contract GolomAidrop is Pausable, ReentrancyGuard, Ownable {
             );
     }
 
-    function validateOrder(IGolomTrader.Order memory o) internal view {
-        require(msg.sender == o.signer, 'invalid signature');
-        bytes32 hashStruct = _hashOrder(o, [o.nonce, o.deadline]);
-        bytes32 hash = keccak256(abi.encodePacked('\x19\x01', DOMAIN_SEPARATOR_EXCHANGE, hashStruct));
-        address signaturesigner = ecrecover(hash, o.v, o.r, o.s);
-        require(signaturesigner == o.signer, 'invalid signature');
-    }
+    // function validateOrder(IGolomTrader.Order memory o) internal view {
+    //     require(msg.sender == o.signer, 'invalid signature');
+    //     bytes32 hashStruct = _hashOrder(o, [o.nonce, o.deadline]);
+    //     bytes32 hash = keccak256(abi.encodePacked('\x19\x01', DOMAIN_SEPARATOR_EXCHANGE, hashStruct));
+    //     address signaturesigner = ecrecover(hash, o.v, o.r, o.s);
+    //     require(signaturesigner == o.signer, 'invalid signature');
+    // }
 
     function setMerkleRoot(bytes32 _merkleRoot) external onlyOwner {
         require(!isMerkleRootSet, 'Owner: Merkle root already set');
@@ -185,7 +185,6 @@ contract GolomAidrop is Pausable, ReentrancyGuard, Ownable {
     function claim(
         uint256 amount,
         bytes32[] calldata merkleProof,
-        IGolomTrader.Order calldata order,
         bool lockTokens
     ) external {
         require(isMerkleRootSet, 'Airdrop: Merkle root not set');
@@ -193,8 +192,6 @@ contract GolomAidrop is Pausable, ReentrancyGuard, Ownable {
         require(block.timestamp <= endTimestamp, 'Airdrop: Too late to claim');
 
         require(!hasClaimed[msg.sender], 'Airdrop: Already claimed');
-
-        validateOrder(order);
 
         bytes32 node = keccak256(abi.encodePacked(msg.sender, amount));
         require(MerkleProof.verify(merkleProof, merkleRoot, node), 'Airdrop: Invalid proof');
