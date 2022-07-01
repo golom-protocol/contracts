@@ -50,6 +50,9 @@ contract GovernorAlpha {
     /// @notice The total number of proposals
     uint256 public proposalCount;
 
+    /// @notice block number of latest proposal
+    uint256 proposalLatestBlock;
+
     struct Proposal {
         /// @notice Unique id for looking up a proposal
         uint256 id;
@@ -151,6 +154,7 @@ contract GovernorAlpha {
         comp = CompInterface(comp_);
         guardian = guardian_;
         voteEscrow = IVoteEscrow(voteEscrow_);
+        proposalLatestBlock = block.timestamp;
     }
 
     function propose(
@@ -226,6 +230,7 @@ contract GovernorAlpha {
     }
 
     function queue(uint256 proposalId) public {
+        require(proposalLatestBlock < block.number, 'cannot queue in same block');
         require(
             state(proposalId) == ProposalState.Succeeded,
             'GovernorAlpha::queue: proposal can only be queued if it is succeeded'
@@ -236,6 +241,7 @@ contract GovernorAlpha {
             _queueOrRevert(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], eta);
         }
         proposal.eta = eta;
+        proposalLatestBlock = block.number;
         emit ProposalQueued(proposalId, eta);
     }
 
