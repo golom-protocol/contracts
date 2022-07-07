@@ -75,7 +75,7 @@ contract RewardDistributor is Ownable {
         address _weth,
         address _trader,
         address _token,
-        address _governance,
+        address _governance
     ) {
         weth = ERC20(_weth);
         trader = _trader;
