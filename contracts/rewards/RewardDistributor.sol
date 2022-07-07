@@ -93,9 +93,6 @@ contract RewardDistributor is Ownable {
         trader = _trader;
         rewardToken = ERC20(_token);
         _transferOwnership(_governance); // set the new owner
-
-        console.log('genesisEndTimw', genesisEndTime);
-        // console.log('reward', address(rewardToken));
     }
 
     modifier onlyTrader() {
