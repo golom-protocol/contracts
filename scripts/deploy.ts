@@ -6,6 +6,11 @@
 import { ethers } from 'hardhat';
 
 async function main() {
+    /**
+     *  STEPS for Final Deployment
+     *  1. deploy timelock
+     */
+
     const GOVERNANCE = '0x9aB76D1181c7723Ce4ab480Fb9610eFF7C6865Fa';
     const GENESIS_START_TIME = '1653508800'; // 25th May 2022, 00.00 AM GST
 
@@ -26,7 +31,7 @@ async function main() {
     // should be called by governance (considering msg.sender == governance)
     await golomToken.setMinter(rewardDistributor.address);
     await golomToken.executeSetMinter();
-    await golomTrader.setDistributor(rewardDistributor.address)
+    await golomTrader.setDistributor(rewardDistributor.address);
     console.log(`🎉🎉🎉 Deployment Successful 🎉🎉🎉 `);
     console.log({
         GolomTrader: golomTrader.address,

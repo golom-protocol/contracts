@@ -43,10 +43,7 @@ interface VE {
 contract RewardDistributor is Ownable {
     address public trader;
     uint256 public epoch = 0;
-    uint256 public genesisEpoch = 0;
-    uint256 public genesis = 0;
-    mapping(uint256 => uint256) public genesisEpochTotalFee; // total fee of genesis epoch
-    mapping(address => mapping(uint256 => uint256)) public genesisFeesTrader; // fees accumulated by address of trader per genesis epoch
+    uint256 public startTime; // timestamp at which the contracts need to be activated
 
     uint256 constant dailyEmission = 600000 * 10**18;
 
@@ -57,8 +54,6 @@ contract RewardDistributor is Ownable {
     uint256 public voteEscrowEnableDate;
     VE public ve;
 
-    uint256 public genesisStartTime; // start time of genesis period which will last for 30 days and 1,666,666 tokens distributed per day pro-rate to fees
-    uint256 public genesisEndTime; // start time of genesis period which will last for 30 days and 1,666,666 tokens distributed per day pro-rate to fees
     uint256 constant secsInDay = 24 * 60 * 60;
     mapping(address => mapping(uint256 => uint256)) public feesTrader; // fees accumulated by address of trader per epoch
     mapping(address => mapping(uint256 => uint256)) public feesExchange; // fees accumulated by exchange of trader per epoch
@@ -74,22 +69,16 @@ contract RewardDistributor is Ownable {
     ERC20 public weth;
     event NewEpoch(uint256 indexed epochNo, uint256 tokenMinted, uint256 rewardStaker, uint256 previousEpochFee);
 
-    uint256 genesisAmtPerDay = 10000;
-    uint256 genesisPeriod = 30 days;
-
     // epochs,trader, token
 
     /// _time to start rewards
     constructor(
         address _weth,
-        uint256 _time, /// _time to start genesis period of 30 days
         address _trader,
         address _token,
         address _governance
     ) {
         weth = ERC20(_weth);
-        genesisStartTime = _time;
-        genesisEndTime = genesisStartTime + genesisPeriod;
         trader = _trader;
         rewardToken = ERC20(_token);
         _transferOwnership(_governance); // set the new owner
@@ -107,30 +96,16 @@ contract RewardDistributor is Ownable {
     /// @param addr the address that contributed in fees
     /// @param fee the fee contributed by these addresses
     function addFee(address[2] memory addr, uint256 fee) public onlyTrader {
+        require(startTime == 0, 'invalidStart');
+
         //console.log(block.timestamp,epoch,fee);
         if (rewardToken.totalSupply() > 1000000000 * 10**18) {
             // if supply is greater then a billion dont mint anything, dont add trades
             return;
         }
 
-        if (block.timestamp < genesisStartTime) {
-            return; //check
-        }
-
-        // if in the genesis period
-        if (block.timestamp <= genesisEndTime) {
-            if (block.timestamp > genesisStartTime + (genesisEpoch) * secsInDay) {
-                genesisEpoch = genesisEpoch + 1;
-            }
-            genesisFeesTrader[addr[0]][genesisEpoch] = genesisFeesTrader[addr[0]][genesisEpoch] + fee;
-            genesisEpochTotalFee[genesisEpoch] = genesisEpochTotalFee[genesisEpoch] + fee;
-            return;
-        }
-
-        console.log('VE', address(ve));
-
         // if 24 hours have passed since last epoch change
-        if (block.timestamp > genesisEndTime + (epoch) * secsInDay) {
+        if (block.timestamp > startTime + (epoch) * secsInDay) {
             // this assumes atleast 1 trade is done daily??????
             // logic to decide how much token to emit
             // emission = daily * (1 - (balance of locker/ total supply))  full if 0 locked and 0 if all locked
@@ -156,32 +131,7 @@ contract RewardDistributor is Ownable {
         feesTrader[addr[0]][epoch] = feesTrader[addr[0]][epoch] + fee;
         feesExchange[addr[1]][epoch] = feesExchange[addr[1]][epoch] + fee;
         epochTotalFee[epoch] = epochTotalFee[epoch] + fee;
-        //console.log(epoch,fee,epochTotalFee[epoch]);
         return;
-    }
-
-    // allows genesis traders to claim all there trading rewards
-    function genesisClaim(address addr, uint256[] memory epochs) public {
-        uint256 reward = 0;
-        console.log('epoch', epoch);
-        // require(block.timestamp >= genesisEndTime, 'invalid');
-        for (uint256 index = 0; index < epochs.length; index++) {
-            console.log('current epoch', epochs[index]);
-            require(epochs[index] < epoch, 'wrong epoch');
-
-            console.log('genesis fees', genesisFeesTrader[addr][epochs[index]]);
-            console.log('numerator', reward + (rewardTrader[epochs[index]] * genesisFeesTrader[addr][epochs[index]]));
-            console.log('denominator', genesisEpochTotalFee[epochs[index]]);
-
-            reward =
-                reward +
-                (rewardTrader[epochs[index]] * genesisFeesTrader[addr][epochs[index]]) /
-                genesisEpochTotalFee[epochs[index]];
-            genesisFeesTrader[addr][epochs[index]] = 0;
-        }
-
-        console.log('reward', reward);
-        rewardToken.transfer(addr, reward);
     }
 
     // allows sellers of nft to claim there previous epoch rewards
@@ -271,6 +221,13 @@ contract RewardDistributor is Ownable {
     function executeAddVoteEscrow() external onlyOwner {
         require(voteEscrowEnableDate >= block.timestamp, 'RewardDistributor: time not over yet');
         ve = VE(pendingVoteEscrow);
+    }
+
+    /// @notice Activate the Reward Distributor
+    function activate() external onlyOwner {
+        if (startTime == 0) {
+            startTime = block.timestamp - 1 days;
+        }
     }
 
     fallback() external payable {}
