@@ -71,17 +71,17 @@ contract RewardDistributor is Ownable {
 
     // epochs,trader, token
 
-    /// _time to start rewards
     constructor(
         address _weth,
         address _trader,
         address _token,
-        address _governance
+        address _governance,
     ) {
         weth = ERC20(_weth);
         trader = _trader;
         rewardToken = ERC20(_token);
         _transferOwnership(_governance); // set the new owner
+        startTime = 1659211200;
     }
 
     modifier onlyTrader() {
@@ -96,8 +96,6 @@ contract RewardDistributor is Ownable {
     /// @param addr the address that contributed in fees
     /// @param fee the fee contributed by these addresses
     function addFee(address[2] memory addr, uint256 fee) public onlyTrader {
-        require(startTime == 0, 'invalidStart');
-
         //console.log(block.timestamp,epoch,fee);
         if (rewardToken.totalSupply() > 1000000000 * 10**18) {
             // if supply is greater then a billion dont mint anything, dont add trades
@@ -221,13 +219,6 @@ contract RewardDistributor is Ownable {
     function executeAddVoteEscrow() external onlyOwner {
         require(voteEscrowEnableDate >= block.timestamp, 'RewardDistributor: time not over yet');
         ve = VE(pendingVoteEscrow);
-    }
-
-    /// @notice Activate the Reward Distributor
-    function activate() external onlyOwner {
-        if (startTime == 0) {
-            startTime = block.timestamp - 1 days;
-        }
     }
 
     fallback() external payable {}

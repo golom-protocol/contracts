@@ -12,6 +12,14 @@ async function main() {
     const timelock = await Timelock.deploy(GOVERNANCE, TIMLOCK_DELAY);
     const governerBravo = await GovernerBravo.deploy(timelock.address, VOTE_ESCROW, GOVERNANCE, VOTE_ESCROW);
 
+    console.log('⏳ Adding Bravo as pending admin in Timelock');
+    await timelock.setPendingAdmin(governerBravo.address);
+    console.log('✅ Added Bravo as pending admin in Timelock Succcessfully!');
+
+    console.log('⏳ Accepting Bravo as admin in Timelock');
+    await governerBravo.__acceptAdmin();
+    console.log('✅ Accepted Bravo as admin in Timelock Succcessfully!');
+
     console.log(`🎉🎉🎉 Deployment Successful 🎉🎉🎉 `);
     console.log({
         timelock: timelock.address,

@@ -5,20 +5,32 @@ async function main() {
 
     const GOLOM_TOKEN = ''; // address of the GOLOM_TOKEN
     const WETH = '';
-    const GENESIS_TIME = ''; // time to start genesis period
     const GOLOM_TRADER = ''; // address of the trader
 
     const VoteEscrow = await ethers.getContractFactory('VoteEscrow');
+    const golomToken = await ethers.getContractAt('GolomToken', GOLOM_TOKEN);
+    const golomTrader = await ethers.getContractAt('GolomTrader', GOLOM_TOKEN);
+
     const RewardDistributor = await ethers.getContractFactory('RewardDistributor');
 
     // Deploy VoteEscrow.sol
     const voteEscrow = await VoteEscrow.deploy(GOLOM_TOKEN);
 
     // Deploy RewardDistributor.sol
-    const rewardDistributor = await RewardDistributor.deploy(WETH, GENESIS_TIME, GOLOM_TRADER, GOLOM_TOKEN, GOVERNANCE);
+    const rewardDistributor = await RewardDistributor.deploy(WETH, GOLOM_TRADER, GOLOM_TOKEN, GOVERNANCE);
 
     // add voteEscrow in reward distributor
-    await rewardDistributor.addVoteEscrow(voteEscrow.address); // REMEMBER: to call `executeAddVoteEscrow` after 1 days
+    console.log('⏳ Adding VoteEscrow to RewardDistributor');
+    await rewardDistributor.addVoteEscrow(voteEscrow.address);
+    console.log('✅ Added VoteEscrow to RewardDistributor Succcessfully!');
+
+    console.log('⏳ Adding RewardDistributor to GolomToken');
+    await golomToken.setMinter(rewardDistributor.address);
+    console.log('✅ Added RewardDistributor to GolomToken Succcessfully!');
+
+    console.log('⏳ Adding RewardDistributor to GolomTrader');
+    await golomTrader.setDistributor(rewardDistributor.address);
+    console.log('✅ Added RewardDistributor to GolomTrader Succcessfully!');
 
     console.log(`🎉🎉🎉 Deployment Successful 🎉🎉🎉 `);
     console.log({
