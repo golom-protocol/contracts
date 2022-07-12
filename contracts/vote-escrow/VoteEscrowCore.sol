@@ -1285,32 +1285,32 @@ contract VoteEscrowCore is IERC721, IERC721Metadata {
         uint256 _locked_end,
         uint256 _value
     ) internal pure returns (string memory output) {
-        output = '<svg preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350"> <style>text{fill:#fff;font-family:sans-serif;font-size:14px}.a{fill:#ff8982}.b{fill:#363636;stroke-width:1;stroke:#ff8210}</style><rect width="100%" height="100%"/><rect x="45" y="6" width="52" height="17" rx="5" class="b"/>';
+        output = '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="468" viewBox="0 0 512 468" fill="none"><g clip-path="url(#clip0_2_190)"><rect width="512" height="468" rx="40" fill="#232323"/><g filter="url(#filter0_f_2_190)"><ellipse cx="256.5" cy="-132" rx="164" ry="381.5" transform="rotate(-90 256.5 -132)" fill="#FF8982"/></g>';
         output = string(
             abi.encodePacked(
                 output,
-                '<text x="10" y="20"> token <tspan class="a">',
+                '<text y="128px" x="60px" fill="white" font-family="Lexend Deca, sans-serif" font-weight="400" font-size="64px">#',
                 toString(_tokenId),
-                '</tspan> </text> <rect x="75" y="26" width="25" height="17" rx="5" class="b"/> <path class="a" d="M79.179 29.909h7.133v1.496h-7.133zm0 8.582h7.133v1.496h-7.133zM79.852 34h5.387v1.496h-5.387z"/>'
+                '</text><text y="318px" x="54px" fill="white" font-family="Lexend Deca, sans-serif" font-weight="400" font-size="24px" fill-opacity="0.64">Locked Till</text>'
             )
         );
         output = string(
             abi.encodePacked(
                 output,
-                '<text x="10" y="40"> balanceOf <tspan x="90" class="a">',
-                toString(_balanceOf),
-                '</tspan> </text> <path class="a" d="M86 62h78v1H86z"/>'
-            )
-        );
-        output = string(
-            abi.encodePacked(
-                output,
-                '<text x="10" y="60"> locked_end  <tspan class="a">',
+                '<text y="320px" x="445px" fill="white" font-family="Lexend Deca, sans-serif" font-weight="400" font-size="24px" text-anchor="end">',
                 toString(_locked_end),
-                '</tspan></text>'
+                '</text><text y="248px" x="54px" fill="white" font-family="Lexend Deca, sans-serif" font-weight="400" font-size="24px" fill-opacity="0.64">Voting Power</text>'
             )
         );
-        output = string(abi.encodePacked(output, '<text x="10" y="80"> value ', toString(_value), '</text></svg>'));
+        output = string(
+            abi.encodePacked(
+                output,
+                '<text y="248px" x="445px" fill="white" font-family="Lexend Deca, sans-serif" font-weight="400" font-size="24px" text-anchor="end">',
+                toString(_balanceOf),
+                '</text><text y="391px" x="54px" fill="white" font-family="Lexend Deca, sans-serif" font-weight="400" font-size="24px" fill-opacity="0.64">Value</text>'
+            )
+        );
+        output = string(abi.encodePacked(output, '<text y="392px" x="447px" fill="white" font-family="Lexend Deca, sans-serif" font-weight="400" font-size="24px" text-anchor="end">', toString(_value), '</text><mask id="mask0_2_190" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="399" y="73" width="58" height="58"><path d="M456.543 102.091C456.543 117.884 443.74 130.686 427.948 130.686C412.155 130.686 399.352 117.884 399.352 102.091C399.352 86.2981 412.155 73.4955 427.948 73.4955C443.74 73.4955 456.543 86.2981 456.543 102.091ZM405.91 102.091C405.91 114.262 415.777 124.128 427.948 124.128C440.118 124.128 449.985 114.262 449.985 102.091C449.985 89.9201 440.118 80.0537 427.948 80.0537C415.777 80.0537 405.91 89.9201 405.91 102.091Z" fill="#C4C4C4"/></mask><g mask="url(#mask0_2_190)"><path d="M458.138 73.4955H396.962V133.076H458.138V73.4955Z" fill="#FD7A7A"/><path d="M396.962 76.7614H458.138" stroke="black" stroke-width="0.328567"/><path d="M396.962 80.266H458.138" stroke="black" stroke-width="0.328567"/><path d="M396.962 83.7708H458.138" stroke="black" stroke-width="0.328567"/><path d="M396.962 87.2754H458.138" stroke="black" stroke-width="0.328567"/><path d="M396.962 90.7802H458.138" stroke="black" stroke-width="0.328567"/><path d="M396.962 94.2848H458.138" stroke="black" stroke-width="0.328567"/><path d="M396.962 97.7897H458.138" stroke="black" stroke-width="0.328567"/><path d="M396.962 101.294H458.138" stroke="black" stroke-width="0.328567"/><path d="M396.962 104.799H458.138" stroke="black" stroke-width="0.328567"/><path d="M396.962 108.304H458.138" stroke="black" stroke-width="0.328567"/><path d="M396.962 111.808H458.138" stroke="black" stroke-width="0.328567"/><path d="M396.962 115.313H458.138" stroke="black" stroke-width="0.328567"/><path d="M396.962 118.818H458.138" stroke="black" stroke-width="0.328567"/><path d="M396.962 122.323H458.138" stroke="black" stroke-width="0.328567"/><path d="M396.962 125.827H458.138" stroke="black" stroke-width="0.328567"/><path d="M396.962 129.332H458.138" stroke="black" stroke-width="0.328567"/></g><mask id="mask1_2_190" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="399" y="73" width="58" height="58"><path d="M456.543 102.091C456.543 117.884 443.74 130.686 427.948 130.686C412.155 130.686 399.352 117.884 399.352 102.091C399.352 86.2981 412.155 73.4955 427.948 73.4955C443.74 73.4955 456.543 86.2981 456.543 102.091ZM405.91 102.091C405.91 114.262 415.777 124.128 427.948 124.128C440.118 124.128 449.985 114.262 449.985 102.091C449.985 89.9201 440.118 80.0537 427.948 80.0537C415.777 80.0537 405.91 89.9201 405.91 102.091Z" fill="white"/></mask><g mask="url(#mask1_2_190)"><path d="M456.543 102.091C456.543 117.884 443.74 130.686 427.948 130.686C412.155 130.686 399.352 117.884 399.352 102.091C399.352 86.2981 412.155 73.4955 427.948 73.4955C443.74 73.4955 456.543 86.2981 456.543 102.091ZM405.91 102.091C405.91 114.262 415.777 124.128 427.948 124.128C440.118 124.128 449.985 114.262 449.985 102.091C449.985 89.9201 440.118 80.0537 427.948 80.0537C415.777 80.0537 405.91 89.9201 405.91 102.091Z" stroke="black" stroke-width="0.876179"/><path d="M422.132 130.606H428.026" stroke="black" stroke-width="0.109522"/><path d="M422.132 73.5752H428.026" stroke="black" stroke-width="0.109522"/></g><mask id="mask2_2_190" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="393" y="73" width="58" height="58"><path d="M450.648 102.091C450.648 117.884 437.845 130.686 422.053 130.686C406.26 130.686 393.457 117.884 393.457 102.091C393.457 86.2981 406.26 73.4955 422.053 73.4955C437.845 73.4955 450.648 86.2981 450.648 102.091ZM400.015 102.091C400.015 114.262 409.882 124.128 422.053 124.128C434.223 124.128 444.09 114.262 444.09 102.091C444.09 89.9201 434.223 80.0537 422.053 80.0537C409.882 80.0537 400.015 89.9201 400.015 102.091Z" fill="white"/></mask><g mask="url(#mask2_2_190)"><path d="M450.648 102.091C450.648 117.884 437.845 130.686 422.053 130.686C406.26 130.686 393.457 117.884 393.457 102.091C393.457 86.2981 406.26 73.4955 422.053 73.4955C437.845 73.4955 450.648 86.2981 450.648 102.091ZM400.015 102.091C400.015 114.262 409.882 124.128 422.053 124.128C434.223 124.128 444.09 114.262 444.09 102.091C444.09 89.9201 434.223 80.0537 422.053 80.0537C409.882 80.0537 400.015 89.9201 400.015 102.091Z" fill="white" stroke="black" stroke-width="0.876179"/></g></g><defs><filter id="filter0_f_2_190" x="-381" y="-552" width="1275" height="840" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur stdDeviation="128" result="effect1_foregroundBlur_2_190"/></filter><clipPath id="clip0_2_190"><rect width="512" height="468" rx="40" fill="white"/></clipPath></defs></svg>'));
 
         string memory json = Base64.encode(
             bytes(
@@ -1318,7 +1318,7 @@ contract VoteEscrowCore is IERC721, IERC721Metadata {
                     abi.encodePacked(
                         '{"name": "Lock #',
                         toString(_tokenId),
-                        '", "description": "Golom locks, can be used to boost gauge yields, vote on token emission, and receive bribes", "image": "data:image/svg+xml;base64,',
+                        '", "description": "Golom locks, can be used to claim protocol fees and token emission", "attributes": [{"trait_type":"Lock End","value":"',toString(_locked_end),'"},{"trait_type":"Power","value":"',toString(_balanceOf),'"},{"trait_type":"Value","value":"',toString(_value),'"}], "image": "data:image/svg+xml;base64,',
                         Base64.encode(bytes(output)),
                         '"}'
                     )

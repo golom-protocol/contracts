@@ -122,7 +122,12 @@ contract RewardDistributor is Ownable {
             rewardToken.mint(address(this), tokenToEmit);
             epochBeginTime[epoch] = block.number;
             if (previousEpochFee > 0) {
-                weth.deposit{value: previousEpochFee}();
+                if (epoch == 1){
+                    weth.deposit{value: address(this).balance}();  
+                    epochTotalFee[0] =  address(this).balance; // staking and trading rewards start at epoch 1, for epoch 0 all contract ETH balance is converted to staker rewards rewards.
+                }else{
+                    weth.deposit{value: previousEpochFee}();
+                }
             }
             emit NewEpoch(epoch, tokenToEmit, stakerReward, previousEpochFee);
         }
@@ -179,19 +184,99 @@ contract RewardDistributor is Ownable {
                 require(epochs[index] < epoch, 'cant claim for future epochs');
                 require(claimed[tokenids[tindex]][epochs[index]] == 0, 'cant claim if already claimed');
                 claimed[tokenids[tindex]][epochs[index]] = 1;
-                reward =
-                    reward +
-                    (rewardStaker[epochs[index]] * ve.balanceOfAtNFT(tokenids[tindex], epochBeginTime[epochs[index]])) /
-                    ve.totalSupplyAt(epochBeginTime[epochs[index]]);
-                rewardEth =
-                    rewardEth +
-                    (epochTotalFee[epochs[index]] *
-                        ve.balanceOfAtNFT(tokenids[tindex], epochBeginTime[epochs[index]])) /
-                    ve.totalSupplyAt(epochBeginTime[epochs[index]]);
+                if (epochs[index] == 0){
+                    rewardEth =
+                        rewardEth +
+                        (epochTotalFee[0] *
+                            ve.balanceOfAtNFT(tokenids[tindex], epochBeginTime[1])) /
+                        ve.totalSupplyAt(epochBeginTime[1]);
+
+                }else{
+                    reward =
+                        reward +
+                        (rewardStaker[epochs[index]] * ve.balanceOfAtNFT(tokenids[tindex], epochBeginTime[epochs[index]])) /
+                        ve.totalSupplyAt(epochBeginTime[epochs[index]]);
+                    rewardEth =
+                        rewardEth +
+                        (epochTotalFee[epochs[index]] *
+                            ve.balanceOfAtNFT(tokenids[tindex], epochBeginTime[epochs[index]])) /
+                        ve.totalSupplyAt(epochBeginTime[epochs[index]]);
+                }
+
             }
         }
         rewardToken.transfer(tokenowner, reward);
         weth.transfer(tokenowner, rewardEth);
+    }
+
+
+    /// @dev returns unclaimed rewards of an NFT, returns (unclaimed golom rewards, unclaimed eth rewards, unclaimed epochs)
+    /// @param tokenid the nft id to claim rewards for all ids in the list must belong to 1 address
+    function stakerRewards(uint256 tokenid) public view returns (
+            uint256,
+            uint256,
+            uint256[] memory
+        ){
+        require(address(ve) != address(0), ' VE not added yet');
+
+        uint256 reward = 0;
+        uint256 rewardEth = 0;
+        uint256[] memory unclaimedepochs = new uint256[](epoch);
+        // for each epoch
+        for (uint256 index = 0; index < epoch; index++) {
+            unclaimedepochs[index]=claimed[tokenid][index];
+            if (claimed[tokenid][index] == 0){
+                if (index == 0){
+                    rewardEth =
+                        rewardEth +
+                        (epochTotalFee[0] *
+                            ve.balanceOfAtNFT(tokenid, epochBeginTime[1])) /
+                        ve.totalSupplyAt(epochBeginTime[1]);
+
+                }else{
+                    reward =
+                        reward +
+                        (rewardStaker[index] * ve.balanceOfAtNFT(tokenid, epochBeginTime[index])) /
+                        ve.totalSupplyAt(epochBeginTime[index]);
+                    rewardEth =
+                        rewardEth +
+                        (epochTotalFee[index] *
+                            ve.balanceOfAtNFT(tokenid, epochBeginTime[index])) /
+                        ve.totalSupplyAt(epochBeginTime[index]);
+                }
+            }
+        }
+        return (reward, rewardEth, unclaimedepochs);
+    }
+
+    /// @dev returns unclaimed rewards of an NFT, returns (unclaimed golom rewards, unclaimed eth rewards, unclaimed epochs)
+    /// @param addr the nft id to claim rewards for all ids in the list must belong to 1 address
+    function traderRewards(address addr) public view returns (
+            uint256        
+            ){
+        uint256 reward = 0;
+        for (uint256 index = 0; index < epoch; index++) {
+            reward =
+                reward +
+                (rewardTrader[index] * feesTrader[addr][index]) /
+                epochTotalFee[index];
+        }
+        return (reward);
+    }
+
+    /// @dev returns unclaimed golom rewards of a trader
+    /// @param addr the nft id to claim rewards for all ids in the list must belong to 1 address
+    function exchangeRewards(address addr) public view returns (
+            uint256
+        ){
+        uint256 reward = 0;
+        for (uint256 index = 0; index < epoch; index++) {
+            reward =
+                reward +
+                (rewardExchange[index] * feesExchange[addr][index]) /
+                epochTotalFee[index];
+        }
+        return (reward);
     }
 
     /// @notice Changes the trader address with timelock
