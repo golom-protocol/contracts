@@ -123,8 +123,8 @@ contract RewardDistributor is Ownable {
             epochBeginTime[epoch] = block.number;
             if (previousEpochFee > 0) {
                 if (epoch == 1){
-                    weth.deposit{value: address(this).balance}();  
                     epochTotalFee[0] =  address(this).balance; // staking and trading rewards start at epoch 1, for epoch 0 all contract ETH balance is converted to staker rewards rewards.
+                    weth.deposit{value: address(this).balance}();  
                 }else{
                     weth.deposit{value: previousEpochFee}();
                 }
@@ -289,20 +289,24 @@ contract RewardDistributor is Ownable {
 
     /// @notice Execute's the change trader function
     function executeChangeTrader() external onlyOwner {
-        require(traderEnableDate >= block.timestamp, 'RewardDistributor: time not over yet');
+        require(traderEnableDate <= block.timestamp, 'RewardDistributor: time not over yet');
         trader = pendingTrader;
     }
 
     /// @notice Adds vote escrow contract for multi staker claim
     /// @param _voteEscrow Address of the voteEscrow contract
     function addVoteEscrow(address _voteEscrow) external onlyOwner {
-        voteEscrowEnableDate = block.timestamp + 1 days;
-        pendingVoteEscrow = _voteEscrow;
+        if (address(ve) == address(0)) {
+            ve = VE(pendingVoteEscrow);
+        } else {
+            voteEscrowEnableDate = block.timestamp + 1 days;
+            pendingVoteEscrow = _voteEscrow;
+        }
     }
 
     /// @notice Adds vote escrow contract for multi staker claim
     function executeAddVoteEscrow() external onlyOwner {
-        require(voteEscrowEnableDate >= block.timestamp, 'RewardDistributor: time not over yet');
+        require(voteEscrowEnableDate <= block.timestamp, 'RewardDistributor: time not over yet');
         ve = VE(pendingVoteEscrow);
     }
 

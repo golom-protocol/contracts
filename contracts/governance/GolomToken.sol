@@ -49,7 +49,7 @@ contract GolomToken is ERC20Votes, Ownable {
     /// @param _rewardDistributor Address of the rewardDistributor
     function mintGenesisReward(address _rewardDistributor) external onlyOwner {
         require(!isGenesisRewardMinted, 'already minted');
-        _mint(_rewardDistributor, 50_000_000 * 1e18);
+        _mint(_rewardDistributor, 62_500_000 * 1e18);
         isGenesisRewardMinted = true;
     }
 

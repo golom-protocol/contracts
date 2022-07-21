@@ -447,7 +447,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
 
     /// @notice Executes the set distributor function after the timelock
     function executeSetDistributor() external onlyOwner {
-        require(distributorEnableDate >= block.timestamp, 'not allowed');
+        require(distributorEnableDate <= block.timestamp, 'not allowed');
         distributor = Distributor(pendingDistributor);
     }
 
