@@ -6,8 +6,6 @@ pragma solidity 0.8.11;
 import 'hardhat/console.sol';
 // import {Math} from '@openzeppelin-contracts/utils/math/SafeCast.sol';
 
-import {Math} from '@openzeppelin/contracts/utils/math/Math.sol';
-import {SafeCast} from '@openzeppelin/contracts/utils/math/SafeCast.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 
 import {VoteEscrowCore} from './VoteEscrowCore.sol';
@@ -177,20 +175,6 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         return votes;
     }
 
-    // TODO: Remove this function
-    /**
-     * @notice Gets the current votes balance for `account`
-     * @param tokenId The address to get votes balance
-     * @return The number of current votes for `account`
-     */
-    function getCurrentVotes_gas(uint256 tokenId) external view returns (uint256) {
-        uint256[] memory delegatednft = _getCurrentDelegated(tokenId);
-        uint256 votes = 0;
-        for (uint256 index = 0; index < delegatednft.length; index++) {
-            votes = votes + this.balanceOfNFT(delegatednft[index]);
-        }
-        return votes;
-    }
 
     /**
      * @notice Determine the prior number of votes for an account as of a block number
