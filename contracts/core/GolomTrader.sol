@@ -199,11 +199,13 @@ contract GolomTrader is Ownable, ReentrancyGuard {
     /// @param amount the amount of times the order is to be filled(useful for ERC1155)
     /// @param referrer referrer of the order
     /// @param p any extra payment that the taker of this order wanna send on succesful execution of order
+    /// @param receiver address which will receive the NFT
     function fillAsk(
         Order calldata o,
         uint256 amount,
         address referrer,
-        Payment calldata p
+        Payment calldata p,
+        address receiver
     ) public payable nonReentrant {
         // check if the signed total amount has all the amounts as well as 50 basis points fee
         require(
@@ -226,11 +228,14 @@ contract GolomTrader is Ownable, ReentrancyGuard {
 
         filled[hashStruct] = filled[hashStruct] + amount;
 
+        if (receiver == address(0)) {
+            receiver = msg.sender;
+        }
         if (o.isERC721) {
             require(amount == 1, 'only 1 erc721 at 1 time');
-            ERC721(o.collection).transferFrom(o.signer, msg.sender, o.tokenId);
+            ERC721(o.collection).transferFrom(o.signer, receiver, o.tokenId);
         } else {
-            ERC1155(o.collection).safeTransferFrom(o.signer, msg.sender, o.tokenId, amount, '');
+            ERC1155(o.collection).safeTransferFrom(o.signer, receiver, o.tokenId, amount, '');
         }
 
         // pay fees of 50 basis points to the distributor
@@ -405,7 +410,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         uint256 leaf,
         bytes32 root,
         bytes32[] memory proof
-    ) public view {
+    ) public pure {
         bytes32 computedHash = keccak256(abi.encode(leaf));
         for (uint256 i = 0; i < proof.length; i++) {
             bytes32 proofElement = proof[i];
