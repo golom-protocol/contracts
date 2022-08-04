@@ -40,127 +40,78 @@ async function main() {
     // console.log(hre.web3);
     // hre.web3.eth.abi.encodeParameter('uint256', '2345675643');
     // const leaves = [2, 3, 4, 5].map(v => keccak256(v));
-    const leaves = [2, 3, 4, 5].map(v => keccak256(hre.web3.eth.abi.encodeParameter('uint256', v)));
+    accounts = await hre.ethers.getSigners();
+    const abi = hre.ethers.utils.defaultAbiCoder;
+    let leaves = [];
+    let leaf;
+    for (let index = 0; index < 20; index++) {
+        // console.log(index);
+        leaf = hre.ethers.utils.solidityKeccak256(["address", "uint256"], [await accounts[index].getAddress(),200]);
+
+        leaves.push(leaf);
+    }
+    
+    // const leaves = [200, 300, 4, 5,6,7,8,9,10,11,12,13,114].map(v => keccak256(v));
+    // console.log(params)
+    console.log(leaves)
     const tree = new MerkleTree(leaves, keccak256, { sort: true });
     const root = tree.getHexRoot();
-    const leaf = keccak256(hre.web3.eth.abi.encodeParameter('uint256', 2));
-    const leaf2 = keccak256(hre.web3.eth.abi.encodeParameter('uint256', 3));
-
-    const proof = tree.getHexProof(leaf);
+    // const leaf = keccak256(114);
+    const abiencoded = hre.ethers.utils.solidityKeccak256(["address", "uint256"], [await accounts[18].getAddress(),200]);
+    const leaf2 = abiencoded;
+    console.log(abiencoded)
+    // const proof = tree.getHexProof(leaf);
     const proof2 = tree.getHexProof(leaf2);
-    console.log(proof, root);
-    console.log(tree.verify(proof, leaf, root));
+    console.log(proof2, root);
+    console.log(tree.verify(proof2, leaf2, root));
+    // address _token,
+    // address _trader,
+    // address _ve
 
-    const [owner, addr1, addr2, addr3] = await hre.ethers.getSigners();
+    // console.log(root)
+    // const Ve = await hre.ethers.getContractFactory('GolomAidrop');
+    // const ve = await Ve.deploy(await accounts[9].getAddress(),await accounts[9].getAddress(),await accounts[9].getAddress());
+    // console.log(await ve.address)
 
-    // deployment script
-    const rewardDistributor = await hre.ethers.getContractFactory('RewardDistributor');
-    const Funnel = await hre.ethers.getContractFactory('Funnel');
-    const funnel = await Funnel.deploy();
+    // console.log(await ve.isMerkleRootSet())
 
-    const Trader = await hre.ethers.getContractFactory('Molotrader');
-    const trader = await Trader.deploy();
+    // await ve.setMerkleRoot(root);
+    // console.log(await ve.isMerkleRootSet())
 
-    await trader.deployed();
-    const Ve = await hre.ethers.getContractFactory('ve');
-    const ve = await Ve.deploy(funnel.address);
+    // const d = await ve.canClaim(
+    //     await accounts[18].getAddress(),
+    //     200,
+    //     proof2)
 
-    console.log('addr', trader.address, funnel.address);
-    const rewarddistributor = await rewardDistributor.deploy(1644742800, trader.address, funnel.address, ve.address);
+    // console.log(d)
+    
+    const root3 = "0x59947c719780ee4a9bc6ac246a07fa73ccb378647cf30208eb71af9c1b3039b8"
 
-    console.log(rewarddistributor.address, await rewarddistributor.epoch(), await rewarddistributor.trader());
-    trader.setDistributor(rewarddistributor.address);
-    funnel.setMinter(rewarddistributor.address);
-    // deployment end
+    const Ve = await hre.ethers.getContractFactory('GolomAidrop');
+    const ve = await Ve.deploy(await accounts[9].getAddress(),await accounts[9].getAddress(),await accounts[9].getAddress());
+    console.log(await ve.address)
 
-    const wethContract = await hre.ethers.getVerifiedContractAt('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2');
+    console.log(await ve.isMerkleRootSet())
 
-    // let wethContract = await hre.ethers.getContractAt('WETH9', '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2');
+    await ve.setMerkleRoot(root3);
+    console.log(await ve.isMerkleRootSet())
+    const proof3 = [
+        '0xf6e1fc995aea35caed4af192774a2d7f11cf422f7f0141071e4776ebc0f1d39e',
+        '0xe9d333a836733bd7c62683827b784be8918f5d2f1f47f8cd3e909a247503003b',
+        '0x1b96b359460ddb4ca7aaf475d92c942e046c203c7f9d3e6e0e5d9f656f07b23c',
+        '0xb13b5adb6c22ca2e1f94dc0ee1236857868129cea2936c9e2f5ad10ceb2d57ce',
+        '0x380992f70d6dbc2e06b270bfb01cf3a9746a40b22c3dd2186139114a11a6237d'
+      ]
+    console.log(proof3)
+    const amt = hre.ethers.utils.parseEther("0.1952")
+    const abiencoded2 = hre.ethers.utils.solidityKeccak256(["address", "uint256"], ["0x61e5d7496cdc8cdce7a072595697f54fb5d505ef",amt]);
+    console.log(abiencoded2)
 
-    current = await wethContract.connect(addr2).deposit({ value: hre.ethers.utils.parseEther('200') });
-    await current.wait();
-    current = await wethContract.connect(addr2).approve(trader.address, hre.ethers.utils.parseEther('200'));
-    await current.wait();
-
-    await hre.ethers.provider.send('evm_setNextBlockTimestamp', [1644742805]);
-    await hre.ethers.provider.send('evm_mine');
-    // hre.ethers.provider.send("evm_mine"); // mine the next block
-    const GameItem = await hre.ethers.getContractFactory('GameItem');
-    var gameitem = await GameItem.deploy();
-
-    var current = await gameitem.connect(addr1).setApprovalForAll(trader.address, true);
-    await current.wait();
-
-    var current = await gameitem.connect(addr2).setApprovalForAll(trader.address, true);
-    await current.wait();
-
-    var receipt = await (await gameitem.awardItem(addr1.address)).wait(); // 1
-    var receipt = await (await gameitem.awardItem(addr1.address)).wait();
-    var receipt = await (await gameitem.awardItem(addr1.address)).wait();
-    var receipt = await (await gameitem.awardItem(addr1.address)).wait(); //4
-
-    const domain = {
-        name: 'GOLOM.IO',
-        version: '1',
-        chainId: 1,
-        verifyingContract: trader.address
-    };
-    console.log(owner.address, addr1.address);
-
-    var totoamt = 10000000;
-    var deadline = Date.now() + 100000;
-    const order = {
-        collection: gameitem.address,
-        tokenId: 0,
-        signer: addr2.address,
-        orderType: 2,
-        totalAmt: totoamt,
-        exchange: { paymentAmt: 100, paymentAddress: owner.address },
-        prePayment: { paymentAmt: 100, paymentAddress: addr3.address },
-        isERC721: true,
-        tokenAmt: 2,
-        refererrAmt: 10,
-        root: root,
-        reservedAddress: owner.address,
-        nonce: 1,
-        deadline: deadline
-    };
-    console.log(order);
-
-    var signature2 = await addr2._signTypedData(domain, types, order);
-    //   console.log("21",signature2)
-    console.log('sig', signature2);
-    var signature = signature2.substring(2);
-    order.r = '0x' + signature.substring(0, 64);
-    order.s = '0x' + signature.substring(64, 128);
-    order.v = parseInt(signature.substring(128, 130), 16);
-
-    // //   console.log(order)
-
-    console.log(order);
-
-    var postPay = 0;
-    const recoveredAddress = hre.ethers.utils.verifyTypedData(domain, types, order, signature2);
-    console.log(recoveredAddress);
-    // var signedMatch = ["0x30917a657ae7d1132bdca40187d781fa3b60002f",2608,"0x55ca81f5f00dee4a072f793d67296abd6b56ba0b",100000000000,[1000000,"0xcd105202276e97b531065a087cecf8f0b76ab737"],[1000000,"0xcd105202276e97b531065a087cecf8f0b76ab737"],true,1000000,20,1655555,27,"0xd3dc3475099d1f59fa88de9d0d547a6b26a5e38fb210f0bdded377e089d3eb5c","0xd3dc3475099d1f59fa88de9d0d547a6b26a5e38fb210f0bdded377e089d3eb5c"]
-
-    var d = await trader
-        .connect(addr1)
-        .fillCriteriaBid(order, 1, 2, proof, null_address, [postPay, '0x6067D233D5eA619d464a218eAf9921B9343e4d16']);
-
-    // console.log(root, proof);
-    // // var d = await trader._verifyProof(root, leaf, proof);
-    // var d = await trader.verify(root, 1, proof);
-    console.log(leaf);
-    console.log(d);
-    receipt = await d.wait();
-    console.log(receipt.cumulativeGasUsed);
-
-    d = await trader
-        .connect(addr1)
-        .fillCriteriaBid(order, 1, 3, proof2, null_address, [postPay, '0x6067D233D5eA619d464a218eAf9921B9343e4d16']);
-    receipt = await d.wait();
-    console.log(receipt.cumulativeGasUsed);
+    const d = await ve.canClaim(
+        "0x61e5d7496cdc8cdce7a072595697f54fb5d505ef",
+        amt,
+        proof3)
+    console.log(d)
 }
 
 // We recommend this pattern to be able to use async/await everywhere

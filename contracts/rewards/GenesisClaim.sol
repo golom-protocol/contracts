@@ -46,7 +46,7 @@ interface IGolomTrader {
 
 }
 
-contract GolomAidrop is Pausable, ReentrancyGuard, Ownable {
+contract GenesisClaim is Pausable, ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable token;
@@ -98,7 +98,7 @@ contract GolomAidrop is Pausable, ReentrancyGuard, Ownable {
         token = IERC20(_token);
         ve = IVe(_ve);
         token.safeApprove(_ve, type(uint256).max);
-        MAXIMUM_AMOUNT_TO_CLAIM = 31000*10**18;
+        MAXIMUM_AMOUNT_TO_CLAIM = 31000000000000*10**18;
     }
 
     function hashPayment(IGolomTrader.Payment memory p) private pure returns (bytes32) {
@@ -191,7 +191,6 @@ contract GolomAidrop is Pausable, ReentrancyGuard, Ownable {
     function claim(
         uint256 amount,
         bytes32[] calldata merkleProof,
-        IGolomTrader.Order calldata order,
         bool lockTokens
     ) external {
         require(isMerkleRootSet, 'Airdrop: Merkle root not set');
@@ -199,8 +198,6 @@ contract GolomAidrop is Pausable, ReentrancyGuard, Ownable {
         require(block.timestamp <= endTimestamp, 'Airdrop: Too late to claim');
 
         require(!hasClaimed[msg.sender], 'Airdrop: Already claimed');
-
-        validateOrder(order);
 
         bytes32 node = keccak256(abi.encodePacked(msg.sender, amount));
         require(MerkleProof.verify(merkleProof, merkleRoot, node), 'Airdrop: Invalid proof');
