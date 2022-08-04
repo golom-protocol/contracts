@@ -84,7 +84,10 @@ async function main() {
 
     const root3 = "0x59947c719780ee4a9bc6ac246a07fa73ccb378647cf30208eb71af9c1b3039b8"
 
-    const root_airdrop = "0x59947c719780ee4a9bc6ac246a07fa73ccb378647cf30208eb71af9c1b3039b8"
+    const root_airdrop = "0xde33f7df67166828cdcc2c107cf6a066fdc639a1c1f27efc1156b9d8bde88c79"
+
+    await golomToken.mintAirdrop(airdrop.address)
+    await golomToken.mintGenesisReward(actualAirdrop.address)
 
     console.log(await actualairdrop.isMerkleRootSet())
 
