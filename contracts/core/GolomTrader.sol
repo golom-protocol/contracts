@@ -242,7 +242,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         }
 
         // pay fees of 50 basis points to the distributor
-        payEther(((o.totalAmt * 50) / 10000) * amount, address(distributor));
+        payEther(((o.totalAmt * 50 * amount) / 10000), address(distributor));
 
         // pay the exchange share
         payEther(o.exchange.paymentAmt * amount, o.exchange.paymentAddress);
@@ -269,7 +269,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         }
         payEther(p.paymentAmt, p.paymentAddress);
 
-        distributor.addFee([o.signer, o.exchange.paymentAddress], ((o.totalAmt * 50) / 10000) * amount);
+        distributor.addFee([o.signer, o.exchange.paymentAddress], ((o.totalAmt * 50 * amount) / 10000));
         emit OrderFilled(o.signer, msg.sender, 0, hashStruct, o.totalAmt * amount);
     }
 
