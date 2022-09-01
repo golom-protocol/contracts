@@ -4,9 +4,10 @@ pragma solidity 0.8.11;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import 'hardhat/console.sol';
 
 interface ERC721 {
-    function transferFrom(
+    function safeTransferFrom(
         address from,
         address to,
         uint256 tokenId
@@ -42,8 +43,8 @@ contract GolomTrader is Ownable, ReentrancyGuard {
     mapping(address => uint256) public nonces; // all nonces other then this nonce
     mapping(bytes32 => uint256) public filled;
 
-    ERC20 WETH = ERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-
+    ERC20 WETH;
+    
     struct Order {
         address collection; // NFT contract address
         uint256 tokenId; // order for which tokenId of the collection
@@ -72,8 +73,6 @@ contract GolomTrader is Ownable, ReentrancyGuard {
     address public governance;
 
     Distributor public distributor;
-    address public pendingDistributor;
-    uint256 public distributorEnableDate;
 
     // events
     event NonceIncremented(address indexed maker, uint256 newNonce);
@@ -89,10 +88,10 @@ contract GolomTrader is Ownable, ReentrancyGuard {
     event OrderCancelled(bytes32 indexed orderHash);
 
     /// @param _governance Address of the governance, responsible for setting distributor
-    constructor(address _governance) {
+    constructor(address _governance, address _weth) {
         // sets governance as owner
         _transferOwnership(_governance);
-
+        WETH = ERC20(_weth);
         uint256 chainId;
         assembly {
             chainId := chainid()
@@ -151,7 +150,9 @@ contract GolomTrader is Ownable, ReentrancyGuard {
     function payEther(uint256 payAmt, address payAddress) internal {
         if (payAmt > 0) {
             // if royalty has to be paid
-            payable(payAddress).transfer(payAmt); // royalty transfer to royaltyaddress
+            // payable(payAddress).transfer(payAmt); // royalty transfer to royaltyaddress
+            (bool success, ) = payable(payAddress).call{value: payAmt}(""); // royalty transfer to royaltyaddress
+            require(success, "Transfer failed.");
         }
     }
 
@@ -198,7 +199,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
     /// @param o the Order struct to be filled must be orderType 0
     /// @param amount the amount of times the order is to be filled(useful for ERC1155)
     /// @param referrer referrer of the order
-    /// @param p any extra payment that the taker of this order wanna send on succesful execution of order
+    /// @param p any extra payment that the taker of this order wanna send on succesful execution of order can only be 15%
     /// @param receiver address which will receive the NFT
     function fillAsk(
         Order calldata o,
@@ -207,14 +208,15 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         Payment calldata p,
         address receiver
     ) public payable nonReentrant {
-        // check if the signed total amount has all the amounts as well as 50 basis points fee
+        // check if the signed total amount has all the amounts as well as 50 basis points fee per 1 unit of amount
         require(
             o.totalAmt >= o.exchange.paymentAmt + o.prePayment.paymentAmt + o.refererrAmt + (o.totalAmt * 50) / 10000,
             'amt not matching'
         );
-
         // attached ETH value should be greater than total value of one NFT * total number of NFTs + any extra payment to be given
-        require(msg.value >= o.totalAmt * amount + p.paymentAmt, 'mgmtm');
+        require(msg.value == o.totalAmt * amount + p.paymentAmt, 'mgmtm');
+
+        require(o.totalAmt * amount * 20/100 >= p.paymentAmt, 'can only pay 20% extra');
 
         if (o.reservedAddress != address(0)) {
             require(msg.sender == o.reservedAddress);
@@ -233,8 +235,9 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         }
         if (o.isERC721) {
             require(amount == 1, 'only 1 erc721 at 1 time');
-            ERC721(o.collection).transferFrom(o.signer, receiver, o.tokenId);
+            ERC721(o.collection).safeTransferFrom(o.signer, receiver, o.tokenId);
         } else {
+            require(amount > 0, 'amount should be positive');
             ERC1155(o.collection).safeTransferFrom(o.signer, receiver, o.tokenId, amount, '');
         }
 
@@ -283,10 +286,11 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         Payment calldata p
     ) public nonReentrant {
         require(
-            o.totalAmt * amount >
+            o.totalAmt * amount >=
                 (o.exchange.paymentAmt + o.prePayment.paymentAmt + o.refererrAmt) * amount + p.paymentAmt
-        ); // cause bidder eth is paying for seller payment p , dont take anything extra from seller
+        ); // cause bidder eth is paying for seller payment p , dont take anything extra from seller //#180
         // require eth amt is sufficient
+        //TODO smart contract reserved address vulnerability
         if (o.reservedAddress != address(0)) {
             require(msg.sender == o.reservedAddress);
         }
@@ -298,8 +302,9 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         if (o.isERC721) {
             require(amount == 1, 'only 1 erc721 at 1 time');
             ERC721 nftcontract = ERC721(o.collection);
-            nftcontract.transferFrom(msg.sender, o.signer, o.tokenId);
+            nftcontract.safeTransferFrom(msg.sender, o.signer, o.tokenId);
         } else {
+            require(amount > 0, 'amount should be positive');
             ERC1155 nftcontract = ERC1155(o.collection);
             nftcontract.safeTransferFrom(msg.sender, o.signer, o.tokenId, amount, '');
         }
@@ -339,8 +344,11 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         address referrer,
         Payment calldata p
     ) public nonReentrant {
-        require(o.totalAmt >= o.exchange.paymentAmt + o.prePayment.paymentAmt + o.refererrAmt);
-        // require eth amt is sufficient
+        require(
+            o.totalAmt * amount >=
+                (o.exchange.paymentAmt + o.prePayment.paymentAmt + o.refererrAmt) * amount + p.paymentAmt
+        ); // cause bidder eth is paying for seller payment p , dont take anything extra from seller //#180
+
         if (o.reservedAddress != address(0)) {
             require(msg.sender == o.reservedAddress);
         }
@@ -358,8 +366,9 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         if (o.isERC721) {
             require(amount == 1, 'only 1 erc721 at 1 time');
             ERC721 nftcontract = ERC721(o.collection);
-            nftcontract.transferFrom(msg.sender, o.signer, tokenId);
+            nftcontract.safeTransferFrom(msg.sender, o.signer, tokenId);
         } else {
+            require(amount > 0, 'amount should be positive');
             ERC1155 nftcontract = ERC1155(o.collection);
             nftcontract.safeTransferFrom(msg.sender, o.signer, tokenId, amount, '');
         }
@@ -378,10 +387,10 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         address referrer,
         Payment calldata p
     ) internal {
-        uint256 protocolfee = ((o.totalAmt * 50) / 10000) * amount;
+        uint256 protocolfee = (o.totalAmt * 50) / 10000 ; // protocol fee per amount
         WETH.transferFrom(o.signer, address(this), o.totalAmt * amount);
         WETH.withdraw(o.totalAmt * amount);
-        payEther(protocolfee, address(distributor));
+        payEther(protocolfee * amount, address(distributor));
         payEther(o.exchange.paymentAmt * amount, o.exchange.paymentAddress);
         payEther(o.prePayment.paymentAmt * amount, o.prePayment.paymentAddress);
         if (o.refererrAmt > 0 && referrer != address(0)) {
@@ -399,7 +408,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
             );
         }
         payEther(p.paymentAmt, p.paymentAddress);
-        distributor.addFee([msg.sender, o.exchange.paymentAddress], protocolfee);
+        distributor.addFee([msg.sender, o.exchange.paymentAddress], protocolfee * amount);
     }
 
     /// @dev Ensure that a given tokenId is contained within a supplied merkle root using a supplied proof.
@@ -442,21 +451,11 @@ contract GolomTrader is Ownable, ReentrancyGuard {
     /// @notice Sets the distributor contract
     /// @param _distributor Address of the distributor
     function setDistributor(address _distributor) external onlyOwner {
-        if (address(distributor) == address(0)) {
             distributor = Distributor(_distributor);
-        } else {
-            pendingDistributor = _distributor;
-            distributorEnableDate = block.timestamp + 1 days;
-        }
-    }
-
-    /// @notice Executes the set distributor function after the timelock
-    function executeSetDistributor() external onlyOwner {
-        require(distributorEnableDate <= block.timestamp, 'not allowed');
-        distributor = Distributor(pendingDistributor);
     }
 
     fallback() external payable {}
 
     receive() external payable {}
+
 }

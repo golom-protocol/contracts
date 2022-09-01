@@ -75,13 +75,16 @@ contract RewardDistributor is Ownable {
         address _weth,
         address _trader,
         address _token,
-        address _governance
+        address _governance,
+        address _voteEscrow,
+        uint _startTime
     ) {
         weth = ERC20(_weth);
         trader = _trader;
         rewardToken = ERC20(_token);
         _transferOwnership(_governance); // set the new owner
-        startTime = 1659211200;
+        ve = VE(_voteEscrow);
+        startTime = _startTime;
     }
 
     modifier onlyTrader() {
@@ -96,12 +99,7 @@ contract RewardDistributor is Ownable {
     /// @param addr the address that contributed in fees
     /// @param fee the fee contributed by these addresses
     function addFee(address[2] memory addr, uint256 fee) public onlyTrader {
-        //console.log(block.timestamp,epoch,fee);
-        if (rewardToken.totalSupply() > 1000000000 * 10**18) {
-            // if supply is greater then a billion dont mint anything, dont add trades
-            return;
-        }
-
+        
         // if 24 hours have passed since last epoch change
         if (block.timestamp > startTime + (epoch) * secsInDay) {
             // this assumes atleast 1 trade is done daily??????
@@ -109,8 +107,15 @@ contract RewardDistributor is Ownable {
             // emission = daily * (1 - (balance of locker/ total supply))  full if 0 locked and 0 if all locked
             // uint256 tokenToEmit = dailyEmission * rewardToken.balanceOf()/
             // emissions is decided by epoch begiining locked/circulating , and amount each nft gets also decided at epoch begining
-            uint256 tokenToEmit = (dailyEmission * (rewardToken.totalSupply() - rewardToken.balanceOf(address(ve)))) /
+
+            if (rewardToken.totalSupply() > 1000000000 * 10**18) {
+            // if supply is greater then a billion dont mint anything, but add trades
+                uint256 tokenToEmit = 0;
+            }else{
+                uint256 tokenToEmit = (dailyEmission * (rewardToken.totalSupply() - rewardToken.balanceOf(address(ve)))) /
                 rewardToken.totalSupply();
+
+            }
             uint256 stakerReward = (tokenToEmit * rewardToken.balanceOf(address(ve))) / rewardToken.totalSupply();
             // deposit previous epoch fee to weth for distribution to stakers
 
@@ -283,31 +288,13 @@ contract RewardDistributor is Ownable {
     /// @dev executeChangeTrader needs to be called after 1 days
     /// @param _trader New trader address
     function changeTrader(address _trader) external onlyOwner {
-        traderEnableDate = block.timestamp + 1 days;
-        pendingTrader = _trader;
-    }
-
-    /// @notice Execute's the change trader function
-    function executeChangeTrader() external onlyOwner {
-        require(traderEnableDate <= block.timestamp, 'RewardDistributor: time not over yet');
         trader = pendingTrader;
     }
 
-    /// @notice Adds vote escrow contract for multi staker claim
+    /// @notice change vote escrow contract for multi staker claim
     /// @param _voteEscrow Address of the voteEscrow contract
-    function addVoteEscrow(address _voteEscrow) external onlyOwner {
-        if (address(ve) == address(0)) {
-            ve = VE(pendingVoteEscrow);
-        } else {
-            voteEscrowEnableDate = block.timestamp + 1 days;
-            pendingVoteEscrow = _voteEscrow;
-        }
-    }
-
-    /// @notice Adds vote escrow contract for multi staker claim
-    function executeAddVoteEscrow() external onlyOwner {
-        require(voteEscrowEnableDate <= block.timestamp, 'RewardDistributor: time not over yet');
-        ve = VE(pendingVoteEscrow);
+    function changeVoteEscrow(address _voteEscrow) external onlyOwner {
+        ve = VE(_voteEscrow);
     }
 
     fallback() external payable {}

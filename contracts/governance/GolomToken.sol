@@ -53,21 +53,10 @@ contract GolomToken is ERC20Votes, Ownable {
         isGenesisRewardMinted = true;
     }
 
-    /// @notice sets the minter with timelock, once setup admin needs to call executeSetMinter()
+    /// @notice sets the minter with timelock
     /// @param _minter Address of the new minter
     function setMinter(address _minter) external onlyOwner {
-        pendingMinter = _minter;
-        minterEnableDate = block.timestamp + 1 days;
+        minter = _minter;
     }
 
-    /// @notice Executes the set minter function after the timelock
-    /// @dev If being called first time, there won't be any timelock
-    function executeSetMinter() external onlyOwner {
-        if (minter == address(0)) {
-            minter = pendingMinter;
-        } else {
-            require(minterEnableDate <= block.timestamp, 'GolomToken: wait for timelock');
-            minter = pendingMinter;
-        }
-    }
 }
