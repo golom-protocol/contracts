@@ -287,7 +287,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
     ) public nonReentrant {
         require(
             o.totalAmt * amount >=
-                (o.exchange.paymentAmt + o.prePayment.paymentAmt + o.refererrAmt) * amount + p.paymentAmt
+                (o.exchange.paymentAmt + o.prePayment.paymentAmt) * amount + p.paymentAmt
         ); // cause bidder eth is paying for seller payment p , dont take anything extra from seller //#180
         // require eth amt is sufficient
         //TODO smart contract reserved address vulnerability
@@ -346,7 +346,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
     ) public nonReentrant {
         require(
             o.totalAmt * amount >=
-                (o.exchange.paymentAmt + o.prePayment.paymentAmt + o.refererrAmt) * amount + p.paymentAmt
+                (o.exchange.paymentAmt + o.prePayment.paymentAmt) * amount + p.paymentAmt
         ); // cause bidder eth is paying for seller payment p , dont take anything extra from seller //#180
 
         if (o.reservedAddress != address(0)) {
