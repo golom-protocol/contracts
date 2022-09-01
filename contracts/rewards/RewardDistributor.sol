@@ -102,46 +102,41 @@ contract RewardDistributor is Ownable {
         
         // if 24 hours have passed since last epoch change
         if (block.timestamp > startTime + (epoch) * secsInDay) {
-            // this assumes atleast 1 trade is done daily??????
+            // this assumes atleast 1 trade is done daily , ensured by a keeper bot
             // logic to decide how much token to emit
             // emission = daily * (1 - (balance of locker/ total supply))  full if 0 locked and 0 if all locked
             // uint256 tokenToEmit = dailyEmission * rewardToken.balanceOf()/
-            // emissions is decided by epoch begiining locked/circulating , and amount each nft gets also decided at epoch begining
+            // emissions is decided by epoch begiining locked/circulating , and amount each nft gets also decided at epoch begining except for epoch 0
+
+            // deposit previous epoch fee to weth for distribution to stakers
+            epochTotalFee[epoch] =  address(this).balance; 
+            weth.deposit{value: address(this).balance}();  
+
+            epoch = epoch + 1;
+            epochBeginTime[epoch] = block.number;
+
 
             if (rewardToken.totalSupply() > 1000000000 * 10**18) {
             // if supply is greater then a billion dont mint anything, but add trades
-                uint256 tokenToEmit = 0;
+                emit NewEpoch(epoch, 0, 0, previousEpochFee);
             }else{
                 uint256 tokenToEmit = (dailyEmission * (rewardToken.totalSupply() - rewardToken.balanceOf(address(ve)))) /
                 rewardToken.totalSupply();
-
+                uint256 stakerReward = (tokenToEmit * rewardToken.balanceOf(address(ve))) / rewardToken.totalSupply();
+                rewardStaker[epoch] = stakerReward;
+                rewardTrader[epoch] = ((tokenToEmit - stakerReward) * 67) / 100;
+                rewardExchange[epoch] = ((tokenToEmit - stakerReward) * 33) / 100;
+                rewardToken.mint(address(this), tokenToEmit);
+                emit NewEpoch(epoch, tokenToEmit, stakerReward, epochTotalFee[epoch-1]);
             }
-            uint256 stakerReward = (tokenToEmit * rewardToken.balanceOf(address(ve))) / rewardToken.totalSupply();
-            // deposit previous epoch fee to weth for distribution to stakers
-
-            uint256 previousEpochFee = epochTotalFee[epoch];
-            epoch = epoch + 1;
-            rewardStaker[epoch] = stakerReward;
-            rewardTrader[epoch] = ((tokenToEmit - stakerReward) * 67) / 100;
-            rewardExchange[epoch] = ((tokenToEmit - stakerReward) * 33) / 100;
-            rewardToken.mint(address(this), tokenToEmit);
-            epochBeginTime[epoch] = block.number;
-            if (previousEpochFee > 0) {
-                if (epoch == 1){
-                    epochTotalFee[0] =  address(this).balance; // staking and trading rewards start at epoch 1, for epoch 0 all contract ETH balance is converted to staker rewards rewards.
-                    weth.deposit{value: address(this).balance}();  
-                }else{
-                    weth.deposit{value: previousEpochFee}();
-                }
-            }
-            emit NewEpoch(epoch, tokenToEmit, stakerReward, previousEpochFee);
         }
-        feesTrader[addr[0]][epoch] = feesTrader[addr[0]][epoch] + fee;
-        feesExchange[addr[1]][epoch] = feesExchange[addr[1]][epoch] + fee;
-        epochTotalFee[epoch] = epochTotalFee[epoch] + fee;
-        return;
+        if (epoch>0){ // start noting contribution to fees by both trader and excahnge if epoch > 0
+            feesTrader[addr[0]][epoch] = feesTrader[addr[0]][epoch] + fee;
+            feesExchange[addr[1]][epoch] = feesExchange[addr[1]][epoch] + fee;
+        }
+        // epochTotalFee[epoch] = epochTotalFee[epoch] + fee; no need to calculate incremental just add end of epoch
     }
-
+    
     // allows sellers of nft to claim there previous epoch rewards
     function traderClaim(address addr, uint256[] memory epochs) public {
         uint256 reward = 0;
