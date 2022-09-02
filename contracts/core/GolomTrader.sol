@@ -316,7 +316,10 @@ contract GolomTrader is Ownable, ReentrancyGuard {
 
     function cancelOrder(Order calldata o) public nonReentrant {
         require(o.signer == msg.sender);
-        (, bytes32 hashStruct, ) = validateOrder(o);
+        (uint256 fulfillOrCancelled, bytes32 hashStruct, ) = validateOrder(o);
+
+        require(fulfillOrCancelled != 2, "Order has been fulfiled or cancelled.");
+
         filled[hashStruct] = o.tokenAmt + 1;
         emit OrderCancelled(hashStruct);
     }
