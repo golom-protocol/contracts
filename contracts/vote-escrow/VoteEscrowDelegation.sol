@@ -100,7 +100,7 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
     ) internal {
         require(_delegatedTokenIds.length < 500, 'VVDelegation: Cannot stake more');
 
-        Checkpoint memory oldCheckpoint = checkpoints[toTokenId][nCheckpoints - 1];
+        Checkpoint storage oldCheckpoint = checkpoints[toTokenId][nCheckpoints - 1];
 
         if (nCheckpoints > 0 && oldCheckpoint.fromBlock == block.number) {
             oldCheckpoint.delegatedTokenIds = _delegatedTokenIds;
