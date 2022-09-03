@@ -248,9 +248,6 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         uint256 _tokenId,
         address _sender
     ) internal override {
-        // remove the delegation
-        this.removeDelegation(_tokenId);
-
         // Check requirements
         require(_isApprovedOrOwner(_sender, _tokenId));
         // Clear approval. Throws if `_from` is not the current owner
@@ -263,6 +260,23 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         ownership_change[_tokenId] = block.number;
         // Log the transfer
         emit Transfer(_from, _to, _tokenId);
+    }
+
+    /// @dev Remove a NFT from a given address
+    ///      Throws if `_from` is not the current owner.
+    function _removeTokenFrom(address _from, uint256 _tokenId) internal override {
+        // Throws if `_from` is not the current owner
+        assert(idToOwner[_tokenId] == _from);
+
+        // remove the delegation
+        this.removeDelegation(_tokenId); // @audit-info Remove the current delegation
+
+        // Change the owner
+        idToOwner[_tokenId] = address(0);
+        // Update owner token index tracking
+        _removeTokenFromOwnerList(_from, _tokenId);
+        // Change count tracking
+        ownerToNFTokenCount[_from] -= 1;
     }
 
     /// @notice Changes minimum voting power required for delegation

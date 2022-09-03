@@ -501,7 +501,7 @@ contract VoteEscrowCore is IERC721, IERC721Metadata {
 
     /// @dev Remove a NFT from a given address
     ///      Throws if `_from` is not the current owner.
-    function _removeTokenFrom(address _from, uint256 _tokenId) internal {
+    function _removeTokenFrom(address _from, uint256 _tokenId) internal virtual {
         // Throws if `_from` is not the current owner
         assert(idToOwner[_tokenId] == _from);
         // Change the owner
