@@ -171,7 +171,9 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         uint256[] memory delegated = _getCurrentDelegated(tokenId);
         uint256 votes = 0;
         for (uint256 index = 0; index < delegated.length; index++) {
-            votes = votes + this.balanceOfNFT(delegated[index]);
+            if (this.balanceOfNFT(delegated[index]) >= MIN_VOTING_POWER_REQUIRED) {
+                votes = votes + this.balanceOfNFT(delegated[index]);
+            }
         }
         return votes;
     }
@@ -188,7 +190,9 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         uint256[] memory delegatednft = _getPriorDelegated(tokenId, blockNumber);
         uint256 votes = 0;
         for (uint256 index = 0; index < delegatednft.length; index++) {
-            votes = votes + this.balanceOfAtNFT(delegatednft[index], blockNumber);
+            if (this.balanceOfAtNFT(delegatednft[index], blockNumber) >= MIN_VOTING_POWER_REQUIRED) {
+                votes = votes + this.balanceOfAtNFT(delegatednft[index], blockNumber);
+            }
         }
         return votes;
     }
