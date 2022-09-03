@@ -51,7 +51,6 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
 
     constructor(address _token) {
         token = _token;
-        voter = msg.sender;
         point_history[0].blk = block.number;
         point_history[0].ts = block.timestamp;
 
@@ -241,8 +240,6 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         uint256 _tokenId,
         address _sender
     ) internal override {
-        require(attachments[_tokenId] == 0 && !voted[_tokenId], 'attached');
-
         // remove the delegation
         this.removeDelegation(_tokenId);
 
