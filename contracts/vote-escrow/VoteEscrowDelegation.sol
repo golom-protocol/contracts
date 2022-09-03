@@ -212,7 +212,7 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
 
     /// @notice Remove delegation
     /// @param tokenId TokenId of which delegation needs to be removed
-    function removeDelegation(uint256 tokenId) external {
+    function removeDelegation(uint256 tokenId) public {
         require(ownerOf(tokenId) == msg.sender, 'VEDelegation: Not allowed');
 
         uint256 toTokenId = delegates[tokenId];
