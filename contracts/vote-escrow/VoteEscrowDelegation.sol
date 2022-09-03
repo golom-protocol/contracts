@@ -71,6 +71,10 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         require(ownerOf(tokenId) == msg.sender, 'VEDelegation: Not allowed');
         require(this.balanceOfNFT(tokenId) >= MIN_VOTING_POWER_REQUIRED, 'VEDelegation: Need more voting power');
 
+        if (delegates[tokenId] != 0) {
+            removeDelegation(tokenId);
+        }
+
         delegates[tokenId] = toTokenId;
         uint256 nCheckpoints = numCheckpoints[toTokenId];
 
