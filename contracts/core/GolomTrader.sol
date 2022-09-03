@@ -39,7 +39,6 @@ interface Distributor {
 }
 
 contract GolomTrader is Ownable, ReentrancyGuard {
-    bytes32 public immutable EIP712_DOMAIN_TYPEHASH;
     mapping(address => uint256) public nonces; // all nonces other then this nonce
     mapping(bytes32 => uint256) public filled;
 
@@ -91,21 +90,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
     constructor(address _governance, address _weth) {
         // sets governance as owner
         _transferOwnership(_governance);
-        WETH = ERC20(_weth);
-        uint256 chainId;
-        assembly {
-            chainId := chainid()
-        }
-
-        EIP712_DOMAIN_TYPEHASH = keccak256(
-            abi.encode(
-                keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
-                keccak256(bytes('GOLOM.IO')),
-                keccak256(bytes('1')),
-                chainId,
-                address(this)
-            )
-        );
+        WETH = ERC20(_weth);        
     }
 
     function hashPayment(Payment calldata p) private pure returns (bytes32) {
@@ -171,6 +156,21 @@ contract GolomTrader is Ownable, ReentrancyGuard {
             uint256
         )
     {
+        uint256 chainId;
+        assembly {
+            chainId := chainid()
+        }
+
+        bytes32 EIP712_DOMAIN_TYPEHASH = keccak256(
+            abi.encode(
+                keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
+                keccak256(bytes('GOLOM.IO')),
+                keccak256(bytes('1')),
+                chainId,
+                address(this)
+            )
+        );
+
         // match signature
         bytes32 hashStruct = _hashOrder(o);
         bytes32 hash = keccak256(abi.encodePacked('\x19\x01', EIP712_DOMAIN_TYPEHASH, hashStruct));
