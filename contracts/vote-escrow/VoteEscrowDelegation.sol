@@ -90,6 +90,9 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
 
     /**
      * @notice Writes the checkpoint to store current NFTs in the specific block
+     * @param toTokenId TokenId for which the checkpointing needs to be written
+     * @param nCheckpoints The number of checkpioints for the delegated tokenId
+     * @param _delegatedTokenIds
      */
     function _writeCheckpoint(
         uint256 toTokenId,
@@ -174,7 +177,6 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         return votes;
     }
 
-
     /**
      * @notice Determine the prior number of votes for an account as of a block number
      * @dev Block number must be a finalized block or else this function will revert to prevent misinformation.
@@ -209,8 +211,11 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
     /// @param tokenId TokenId of which delegation needs to be removed
     function removeDelegation(uint256 tokenId) external {
         require(ownerOf(tokenId) == msg.sender, 'VEDelegation: Not allowed');
-        uint256 nCheckpoints = numCheckpoints[tokenId];
-        Checkpoint storage checkpoint = checkpoints[tokenId][nCheckpoints - 1];
+
+        uint256 toTokenId = delegates[tokenId];
+
+        uint256 nCheckpoints = numCheckpoints[toTokenId];
+        Checkpoint storage checkpoint = checkpoints[toTokenId][nCheckpoints - 1];
         removeElement(checkpoint.delegatedTokenIds, tokenId);
         _writeCheckpoint(tokenId, nCheckpoints, checkpoint.delegatedTokenIds);
     }
