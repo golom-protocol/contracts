@@ -104,13 +104,13 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
     ) internal {
         require(_delegatedTokenIds.length < 500, 'VVDelegation: Cannot stake more');
 
-        Checkpoint storage oldCheckpoint = checkpoints[toTokenId][nCheckpoints - 1];
-
-        if (nCheckpoints > 0 && oldCheckpoint.fromBlock == block.number) {
-            oldCheckpoint.delegatedTokenIds = _delegatedTokenIds;
-        } else {
+        require(_delegatedTokenIds.length < 500, 'VVDelegation: Cannot stake more');
+        if (nCheckpoints == 0 || checkpoints[toTokenId][nCheckpoints - 1].fromBlock < block.number) {
             checkpoints[toTokenId][nCheckpoints] = Checkpoint(block.number, _delegatedTokenIds);
             numCheckpoints[toTokenId] = nCheckpoints + 1;
+        } else {
+            Checkpoint storage oldCheckpoint = checkpoints[toTokenId][nCheckpoints - 1];
+            oldCheckpoint.delegatedTokenIds = _delegatedTokenIds;
         }
     }
 
