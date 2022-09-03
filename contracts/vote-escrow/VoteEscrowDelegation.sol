@@ -92,7 +92,7 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
      * @notice Writes the checkpoint to store current NFTs in the specific block
      * @param toTokenId TokenId for which the checkpointing needs to be written
      * @param nCheckpoints The number of checkpioints for the delegated tokenId
-     * @param _delegatedTokenIds
+     * @param _delegatedTokenIds Previously delegated token IDs
      */
     function _writeCheckpoint(
         uint256 toTokenId,
