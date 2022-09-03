@@ -889,21 +889,21 @@ contract VoteEscrowCore is IERC721, IERC721Metadata {
     //     attachments[_tokenId] = attachments[_tokenId] - 1;
     // }
 
-    function merge(uint256 _from, uint256 _to) external {
-        require(_from != _to);
-        require(_isApprovedOrOwner(msg.sender, _from));
-        require(_isApprovedOrOwner(msg.sender, _to));
+    // function merge(uint256 _from, uint256 _to) external {
+    //     require(_from != _to);
+    //     require(_isApprovedOrOwner(msg.sender, _from));
+    //     require(_isApprovedOrOwner(msg.sender, _to));
 
-        LockedBalance memory _locked0 = locked[_from];
-        LockedBalance memory _locked1 = locked[_to];
-        uint256 value0 = uint256(int256(_locked0.amount));
-        uint256 end = _locked0.end >= _locked1.end ? _locked0.end : _locked1.end;
+    //     LockedBalance memory _locked0 = locked[_from];
+    //     LockedBalance memory _locked1 = locked[_to];
+    //     uint256 value0 = uint256(int256(_locked0.amount));
+    //     uint256 end = _locked0.end >= _locked1.end ? _locked0.end : _locked1.end;
 
-        locked[_from] = LockedBalance(0, 0);
-        _checkpoint(_from, _locked0, LockedBalance(0, 0));
-        _burn(_from);
-        _deposit_for(_to, value0, end, _locked1, DepositType.MERGE_TYPE);
-    }
+    //     locked[_from] = LockedBalance(0, 0);
+    //     _checkpoint(_from, _locked0, LockedBalance(0, 0));
+    //     _burn(_from);
+    //     _deposit_for(_to, value0, end, _locked1, DepositType.MERGE_TYPE);
+    // }
 
     function block_number() external view returns (uint256) {
         return block.number;
