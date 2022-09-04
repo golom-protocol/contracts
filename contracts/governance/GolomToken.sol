@@ -19,6 +19,7 @@ contract GolomToken is ERC20Votes, Ownable {
 
     bool public isAirdropMinted;
     bool public isGenesisRewardMinted;
+    bool public isTreasuryMinted;
 
     modifier onlyMinter() {
         require(msg.sender == minter, 'GolomToken: only reward distributor can enable');
@@ -51,6 +52,14 @@ contract GolomToken is ERC20Votes, Ownable {
         require(!isGenesisRewardMinted, 'already minted');
         _mint(_rewardDistributor, 62_500_000 * 1e18);
         isGenesisRewardMinted = true;
+    }
+
+    /// @notice Mint 100M treasury tokens
+    /// @param _treasury Address of the treasury
+    function mintTreasury(address _treasury) external onlyOwner {
+        require(!isTreasuryMinted, 'already minted');
+        _mint(_treasury, 100_000_000 * 1e18);
+        isTreasuryMinted = true;
     }
 
     /// @notice sets the minter with timelock
