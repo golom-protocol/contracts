@@ -228,7 +228,8 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         uint256 nCheckpoints = numCheckpoints[toTokenId];
         Checkpoint storage checkpoint = checkpoints[toTokenId][nCheckpoints - 1];
         removeElement(checkpoint.delegatedTokenIds, tokenId);
-        _writeCheckpoint(tokenId, nCheckpoints, checkpoint.delegatedTokenIds);
+        Checkpoint storage latestCheckpoints = checkpoints[toTokenId][nCheckpoints - 1];
+        _writeCheckpoint(tokenId, nCheckpoints, latestCheckpoints.delegatedTokenIds);
     }
 
     // /// @notice Remove delegation by user
