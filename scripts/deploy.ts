@@ -60,9 +60,31 @@ async function main() {
     await golomToken.setMinter(rewardDistributor.address);
     await golomTrader.setDistributor(rewardDistributor.address);
 
-    await golomToken.mintAirdrop(rewardDistributor.address);
-    await golomToken.mintGenesisReward(rewardDistributor.address);
+    const Airdrop = await ethers.getContractFactory('GenesisClaim');
+    const airdrop = await Airdrop.deploy(golomToken.address,golomTrader.address,voteEscrow.address);
+    console.log("GenesisClaim:",await airdrop.address);
 
+    const actualAirdrop = await ethers.getContractFactory('GolomAidrop');
+    const actualairdrop = await actualAirdrop.deploy(golomToken.address,golomTrader.address,voteEscrow.address);
+    console.log("Golomairdrop:",await actualairdrop.address);
+
+    const root3 = "0x59947c719780ee4a9bc6ac246a07fa73ccb378647cf30208eb71af9c1b3039b8"
+
+    const root_airdrop = "0xde33f7df67166828cdcc2c107cf6a066fdc639a1c1f27efc1156b9d8bde88c79"
+
+    await golomToken.mintAirdrop(airdrop.address)
+    await golomToken.mintGenesisReward(actualairdrop.address)
+
+    console.log(await actualairdrop.isMerkleRootSet())
+
+    await actualairdrop.setMerkleRoot(root_airdrop);
+    console.log(await actualairdrop.isMerkleRootSet())
+
+
+    console.log(await airdrop.isMerkleRootSet())
+
+    await airdrop.setMerkleRoot(root3);
+    console.log(await airdrop.isMerkleRootSet())
     console.log(`🎉🎉🎉 Deployment Successful 🎉🎉🎉 `);
     console.log({
         GolomTrader: golomTrader.address,

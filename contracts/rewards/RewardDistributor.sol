@@ -118,7 +118,7 @@ contract RewardDistributor is Ownable {
 
             if (rewardToken.totalSupply() > 1000000000 * 10**18) {
             // if supply is greater then a billion dont mint anything, but add trades
-                emit NewEpoch(epoch, 0, 0, previousEpochFee);
+                emit NewEpoch(epoch, 0, 0, epochTotalFee[epoch-1]);
             }else{
                 uint256 tokenToEmit = (dailyEmission * (rewardToken.totalSupply() - rewardToken.balanceOf(address(ve)))) /
                 rewardToken.totalSupply();
@@ -136,7 +136,7 @@ contract RewardDistributor is Ownable {
         }
         // epochTotalFee[epoch] = epochTotalFee[epoch] + fee; no need to calculate incremental just add end of epoch
     }
-    
+
     // allows sellers of nft to claim there previous epoch rewards
     function traderClaim(address addr, uint256[] memory epochs) public {
         uint256 reward = 0;
@@ -283,7 +283,7 @@ contract RewardDistributor is Ownable {
     /// @dev executeChangeTrader needs to be called after 1 days
     /// @param _trader New trader address
     function changeTrader(address _trader) external onlyOwner {
-        trader = pendingTrader;
+        trader = _trader;
     }
 
     /// @notice change vote escrow contract for multi staker claim

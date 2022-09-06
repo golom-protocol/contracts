@@ -84,6 +84,22 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         uint256 price
     );
 
+    // event OrderFilled(
+    //     address indexed maker,
+    //     address indexed taker,
+    //     uint256 indexed orderType,
+    //     bytes32 orderHash,
+    //     address collection,
+    //     uint256 tokenId,
+    //     uint256 price,
+    //     uint256 quantity,
+    //     address reservedAddress,
+    //     Payment exchange,
+    //     Payment prePayment,
+    //     Payment postPayment,
+    //     Payment refererr
+    // );
+
     event OrderCancelled(bytes32 indexed orderHash);
 
     /// @param _governance Address of the governance, responsible for setting distributor
@@ -271,6 +287,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
 
         distributor.addFee([o.signer, o.exchange.paymentAddress], ((o.totalAmt * 50 * amount) / 10000));
         emit OrderFilled(o.signer, msg.sender, 0, hashStruct, o.totalAmt * amount);
+        // emit OrderFilled(o.signer, msg.sender, 0, hashStruct, o.collection, o.tokenId, o.totalAmt, amount, o.reservedAddress, o.exchange, o.prePayment, p, Payment(o.refererrAmt,referrer));
     }
 
     /// @dev function to fill a signed order of ordertype 1 also has a payment param in case the taker wants
