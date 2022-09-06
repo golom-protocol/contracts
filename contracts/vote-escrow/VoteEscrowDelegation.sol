@@ -79,9 +79,13 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         uint256 nCheckpoints = numCheckpoints[toTokenId];
 
         if (nCheckpoints > 0) {
-            Checkpoint storage checkpoint = checkpoints[toTokenId][nCheckpoints - 1];
-            checkpoint.delegatedTokenIds.push(tokenId);
-            _writeCheckpoint(toTokenId, nCheckpoints, checkpoint.delegatedTokenIds);
+            // get old checkpoints
+            Checkpoint memory oldCheckpoints = checkpoints[toTokenId][nCheckpoints - 1];
+            // add new token to the array by creating fixed size array
+            uint256[] memory a = new uint256[](oldCheckpoints.delegatedTokenIds.length + 1);
+            a[oldCheckpoints.delegatedTokenIds.length + 1] = tokenId;
+            // write the checkpoint
+            _writeCheckpoint(toTokenId, nCheckpoints, a);
         } else {
             uint256[] memory array = new uint256[](1);
             array[0] = tokenId;
