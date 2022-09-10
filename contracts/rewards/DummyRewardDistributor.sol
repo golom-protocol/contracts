@@ -5,7 +5,7 @@ pragma solidity 0.8.11;
 // is minter of token, first interaction mints tokens and distributes tokens
 // gives prorata tokens to traders and exchange daily
 
-import '@openzeppelin/contracts/access/Ownable.sol';
+import '../utils/Ownable.sol';
 import 'hardhat/console.sol';
 
 interface ERC20 {

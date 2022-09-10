@@ -8,7 +8,7 @@ pragma solidity ^0.8.11;
 // Tokens are minted on the initial mint
 // Additionally mint function is called to mint the tokens, only the reward distributor contract will be able to mint the token
 
-import '@openzeppelin/contracts/access/Ownable.sol';
+import '../utils/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol';
 
 contract GolomToken is ERC20Votes, Ownable {
@@ -67,5 +67,4 @@ contract GolomToken is ERC20Votes, Ownable {
     function setMinter(address _minter) external onlyOwner {
         minter = _minter;
     }
-
 }

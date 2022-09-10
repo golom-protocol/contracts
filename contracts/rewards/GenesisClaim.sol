@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
+import {Ownable} from '../utils/Ownable.sol';
 import {Pausable} from '@openzeppelin/contracts/security/Pausable.sol';
 import {ReentrancyGuard} from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import {MerkleProof} from '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
@@ -43,7 +43,6 @@ interface IGolomTrader {
         bytes32 r;
         bytes32 s;
     }
-
 }
 
 contract GenesisClaim is Pausable, ReentrancyGuard, Ownable {
@@ -98,7 +97,7 @@ contract GenesisClaim is Pausable, ReentrancyGuard, Ownable {
         token = IERC20(_token);
         ve = IVe(_ve);
         token.safeApprove(_ve, type(uint256).max);
-        MAXIMUM_AMOUNT_TO_CLAIM = 31000000000000*10**18;
+        MAXIMUM_AMOUNT_TO_CLAIM = 31000000000000 * 10**18;
     }
 
     function hashPayment(IGolomTrader.Payment memory p) private pure returns (bytes32) {
@@ -186,8 +185,6 @@ contract GenesisClaim is Pausable, ReentrancyGuard, Ownable {
         maxLockDuration = max;
     }
 
-    
-
     function claim(
         uint256 amount,
         bytes32[] calldata merkleProof,
@@ -212,8 +209,8 @@ contract GenesisClaim is Pausable, ReentrancyGuard, Ownable {
         emit AirdropRewardsClaim(msg.sender, amount, lockTokens);
     }
 
-    function burn() external{
-        require(block.timestamp >= endTimestamp, 'too early to burn'); 
+    function burn() external {
+        require(block.timestamp >= endTimestamp, 'too early to burn');
         // token._burn(address(this),token.balanceOf(address(this)));
     }
 }
