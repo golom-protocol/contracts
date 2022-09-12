@@ -94,7 +94,7 @@ contract GenesisClaim is Pausable, ReentrancyGuard, Ownable {
                 address(this)
             )
         );
-        endTimestamp = 1659861430;
+        endTimestamp = 1668628800;
         token = IERC20(_token);
         ve = IVe(_ve);
         token.safeApprove(_ve, type(uint256).max);
