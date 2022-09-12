@@ -51,7 +51,6 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
 
     constructor(address _token) {
         token = _token;
-        voter = msg.sender;
         point_history[0].blk = block.number;
         point_history[0].ts = block.timestamp;
 
@@ -72,13 +71,21 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         require(ownerOf(tokenId) == msg.sender, 'VEDelegation: Not allowed');
         require(this.balanceOfNFT(tokenId) >= MIN_VOTING_POWER_REQUIRED, 'VEDelegation: Need more voting power');
 
+        if (delegates[tokenId] != 0) {
+            removeDelegation(tokenId);
+        }
+
         delegates[tokenId] = toTokenId;
         uint256 nCheckpoints = numCheckpoints[toTokenId];
 
         if (nCheckpoints > 0) {
-            Checkpoint storage checkpoint = checkpoints[toTokenId][nCheckpoints - 1];
-            checkpoint.delegatedTokenIds.push(tokenId);
-            _writeCheckpoint(toTokenId, nCheckpoints, checkpoint.delegatedTokenIds);
+            // get old checkpoints
+            Checkpoint memory oldCheckpoints = checkpoints[toTokenId][nCheckpoints - 1];
+            // add new token to the array by creating fixed size array
+            uint256[] memory a = new uint256[](oldCheckpoints.delegatedTokenIds.length + 1);
+            a[oldCheckpoints.delegatedTokenIds.length + 1] = tokenId;
+            // write the checkpoint
+            _writeCheckpoint(toTokenId, nCheckpoints, a);
         } else {
             uint256[] memory array = new uint256[](1);
             array[0] = tokenId;
@@ -90,6 +97,9 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
 
     /**
      * @notice Writes the checkpoint to store current NFTs in the specific block
+     * @param toTokenId TokenId for which the checkpointing needs to be written
+     * @param nCheckpoints The number of checkpioints for the delegated tokenId
+     * @param _delegatedTokenIds Previously delegated token IDs
      */
     function _writeCheckpoint(
         uint256 toTokenId,
@@ -98,13 +108,13 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
     ) internal {
         require(_delegatedTokenIds.length < 500, 'VVDelegation: Cannot stake more');
 
-        Checkpoint memory oldCheckpoint = checkpoints[toTokenId][nCheckpoints - 1];
-
-        if (nCheckpoints > 0 && oldCheckpoint.fromBlock == block.number) {
-            oldCheckpoint.delegatedTokenIds = _delegatedTokenIds;
-        } else {
+        require(_delegatedTokenIds.length < 500, 'VVDelegation: Cannot stake more');
+        if (nCheckpoints == 0 || checkpoints[toTokenId][nCheckpoints - 1].fromBlock < block.number) {
             checkpoints[toTokenId][nCheckpoints] = Checkpoint(block.number, _delegatedTokenIds);
             numCheckpoints[toTokenId] = nCheckpoints + 1;
+        } else {
+            Checkpoint storage oldCheckpoint = checkpoints[toTokenId][nCheckpoints - 1];
+            oldCheckpoint.delegatedTokenIds = _delegatedTokenIds;
         }
     }
 
@@ -169,11 +179,12 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         uint256[] memory delegated = _getCurrentDelegated(tokenId);
         uint256 votes = 0;
         for (uint256 index = 0; index < delegated.length; index++) {
-            votes = votes + this.balanceOfNFT(delegated[index]);
+            if (this.balanceOfNFT(delegated[index]) >= MIN_VOTING_POWER_REQUIRED) {
+                votes = votes + this.balanceOfNFT(delegated[index]);
+            }
         }
         return votes;
     }
-
 
     /**
      * @notice Determine the prior number of votes for an account as of a block number
@@ -187,7 +198,9 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         uint256[] memory delegatednft = _getPriorDelegated(tokenId, blockNumber);
         uint256 votes = 0;
         for (uint256 index = 0; index < delegatednft.length; index++) {
-            votes = votes + this.balanceOfAtNFT(delegatednft[index], blockNumber);
+            if (this.balanceOfAtNFT(delegatednft[index], blockNumber) >= MIN_VOTING_POWER_REQUIRED) {
+                votes = votes + this.balanceOfAtNFT(delegatednft[index], blockNumber);
+            }
         }
         return votes;
     }
@@ -207,12 +220,16 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
 
     /// @notice Remove delegation
     /// @param tokenId TokenId of which delegation needs to be removed
-    function removeDelegation(uint256 tokenId) external {
+    function removeDelegation(uint256 tokenId) public {
         require(ownerOf(tokenId) == msg.sender, 'VEDelegation: Not allowed');
-        uint256 nCheckpoints = numCheckpoints[tokenId];
-        Checkpoint storage checkpoint = checkpoints[tokenId][nCheckpoints - 1];
+
+        uint256 toTokenId = delegates[tokenId];
+
+        uint256 nCheckpoints = numCheckpoints[toTokenId];
+        Checkpoint storage checkpoint = checkpoints[toTokenId][nCheckpoints - 1];
         removeElement(checkpoint.delegatedTokenIds, tokenId);
-        _writeCheckpoint(tokenId, nCheckpoints, checkpoint.delegatedTokenIds);
+        Checkpoint storage latestCheckpoints = checkpoints[toTokenId][nCheckpoints - 1];
+        _writeCheckpoint(tokenId, nCheckpoints, latestCheckpoints.delegatedTokenIds);
     }
 
     // /// @notice Remove delegation by user
@@ -236,11 +253,6 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         uint256 _tokenId,
         address _sender
     ) internal override {
-        require(attachments[_tokenId] == 0 && !voted[_tokenId], 'attached');
-
-        // remove the delegation
-        this.removeDelegation(_tokenId);
-
         // Check requirements
         require(_isApprovedOrOwner(_sender, _tokenId));
         // Clear approval. Throws if `_from` is not the current owner
@@ -253,6 +265,23 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         ownership_change[_tokenId] = block.number;
         // Log the transfer
         emit Transfer(_from, _to, _tokenId);
+    }
+
+    /// @dev Remove a NFT from a given address
+    ///      Throws if `_from` is not the current owner.
+    function _removeTokenFrom(address _from, uint256 _tokenId) internal override {
+        // Throws if `_from` is not the current owner
+        assert(idToOwner[_tokenId] == _from);
+
+        // remove the delegation
+        this.removeDelegation(_tokenId); // @audit-info Remove the current delegation
+
+        // Change the owner
+        idToOwner[_tokenId] = address(0);
+        // Update owner token index tracking
+        _removeTokenFromOwnerList(_from, _tokenId);
+        // Change count tracking
+        ownerToNFTokenCount[_from] -= 1;
     }
 
     /// @notice Changes minimum voting power required for delegation

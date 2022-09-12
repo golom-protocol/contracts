@@ -310,9 +310,9 @@ contract VoteEscrowCore is IERC721, IERC721Metadata {
     mapping(uint256 => uint256) public user_point_epoch;
     mapping(uint256 => int128) public slope_changes; // time -> signed slope change
 
-    mapping(uint256 => uint256) public attachments;
-    mapping(uint256 => bool) public voted;
-    address public voter;
+    // mapping(uint256 => uint256) public attachments;
+    // mapping(uint256 => bool) public voted;
+    // address public voter;
 
     string public constant name = 'veNFT';
     string public constant symbol = 'veNFT';
@@ -501,7 +501,7 @@ contract VoteEscrowCore is IERC721, IERC721Metadata {
 
     /// @dev Remove a NFT from a given address
     ///      Throws if `_from` is not the current owner.
-    function _removeTokenFrom(address _from, uint256 _tokenId) internal {
+    function _removeTokenFrom(address _from, uint256 _tokenId) internal virtual {
         // Throws if `_from` is not the current owner
         assert(idToOwner[_tokenId] == _from);
         // Change the owner
@@ -535,7 +535,6 @@ contract VoteEscrowCore is IERC721, IERC721Metadata {
         uint256 _tokenId,
         address _sender
     ) internal virtual {
-        require(attachments[_tokenId] == 0 && !voted[_tokenId], 'attached');
         // Check requirements
         require(_isApprovedOrOwner(_sender, _tokenId));
         // Clear approval. Throws if `_from` is not the current owner
@@ -601,9 +600,9 @@ contract VoteEscrowCore is IERC721, IERC721Metadata {
 
         if (_isContract(_to)) {
             // Throws if transfer destination is a contract which does not implement 'onERC721Received'
-            try IERC721Receiver(_to).onERC721Received(msg.sender, _from, _tokenId, _data) returns (bytes4) {} catch (
-                bytes memory reason
-            ) {
+            try IERC721Receiver(_to).onERC721Received(msg.sender, _from, _tokenId, _data) returns (bytes4 retval) {
+                require(retval == IERC721Receiver.onERC721Received.selector, 'ERC721: non ERC721Receiver');
+            } catch (bytes memory reason) {
                 if (reason.length == 0) {
                     revert('ERC721: transfer to non ERC721Receiver implementer');
                 } else {
@@ -865,47 +864,46 @@ contract VoteEscrowCore is IERC721, IERC721Metadata {
         emit Supply(supply_before, supply_before + _value);
     }
 
-    function setVoter(address _voter) external {
-        require(msg.sender == voter);
-        voter = _voter;
-    }
+    // function setVoter(address _voter) external {
+    //     require(msg.sender == voter);
+    //     voter = _voter;
+    // }
 
-    function voting(uint256 _tokenId) external {
-        require(msg.sender == voter);
-        voted[_tokenId] = true;
-    }
+    // function voting(uint256 _tokenId) external {
+    //     require(msg.sender == voter);
+    //     voted[_tokenId] = true;
+    // }
 
-    function abstain(uint256 _tokenId) external {
-        require(msg.sender == voter);
-        voted[_tokenId] = false;
-    }
+    // function abstain(uint256 _tokenId) external {
+    //     require(msg.sender == voter);
+    //     voted[_tokenId] = false;
+    // }
 
-    function attach(uint256 _tokenId) external {
-        require(msg.sender == voter);
-        attachments[_tokenId] = attachments[_tokenId] + 1;
-    }
+    // function attach(uint256 _tokenId) external {
+    //     require(msg.sender == voter);
+    //     attachments[_tokenId] = attachments[_tokenId] + 1;
+    // }
 
-    function detach(uint256 _tokenId) external {
-        require(msg.sender == voter);
-        attachments[_tokenId] = attachments[_tokenId] - 1;
-    }
+    // function detach(uint256 _tokenId) external {
+    //     require(msg.sender == voter);
+    //     attachments[_tokenId] = attachments[_tokenId] - 1;
+    // }
 
-    function merge(uint256 _from, uint256 _to) external {
-        require(attachments[_from] == 0 && !voted[_from], 'attached');
-        require(_from != _to);
-        require(_isApprovedOrOwner(msg.sender, _from));
-        require(_isApprovedOrOwner(msg.sender, _to));
+    // function merge(uint256 _from, uint256 _to) external {
+    //     require(_from != _to);
+    //     require(_isApprovedOrOwner(msg.sender, _from));
+    //     require(_isApprovedOrOwner(msg.sender, _to));
 
-        LockedBalance memory _locked0 = locked[_from];
-        LockedBalance memory _locked1 = locked[_to];
-        uint256 value0 = uint256(int256(_locked0.amount));
-        uint256 end = _locked0.end >= _locked1.end ? _locked0.end : _locked1.end;
+    //     LockedBalance memory _locked0 = locked[_from];
+    //     LockedBalance memory _locked1 = locked[_to];
+    //     uint256 value0 = uint256(int256(_locked0.amount));
+    //     uint256 end = _locked0.end >= _locked1.end ? _locked0.end : _locked1.end;
 
-        locked[_from] = LockedBalance(0, 0);
-        _checkpoint(_from, _locked0, LockedBalance(0, 0));
-        _burn(_from);
-        _deposit_for(_to, value0, end, _locked1, DepositType.MERGE_TYPE);
-    }
+    //     locked[_from] = LockedBalance(0, 0);
+    //     _checkpoint(_from, _locked0, LockedBalance(0, 0));
+    //     _burn(_from);
+    //     _deposit_for(_to, value0, end, _locked1, DepositType.MERGE_TYPE);
+    // }
 
     function block_number() external view returns (uint256) {
         return block.number;
@@ -1005,7 +1003,6 @@ contract VoteEscrowCore is IERC721, IERC721Metadata {
     /// @dev Only possible if the lock has expired
     function withdraw(uint256 _tokenId) external nonreentrant {
         assert(_isApprovedOrOwner(msg.sender, _tokenId));
-        require(attachments[_tokenId] == 0 && !voted[_tokenId], 'attached');
 
         LockedBalance memory _locked = locked[_tokenId];
         require(block.timestamp >= _locked.end, "The lock didn't expire");
@@ -1231,7 +1228,7 @@ contract VoteEscrowCore is IERC721, IERC721Metadata {
         // Clear approval
         approve(address(0), _tokenId);
         // Remove token
-        _removeTokenFrom(msg.sender, _tokenId);
+        _removeTokenFrom(owner, _tokenId);
         emit Transfer(owner, address(0), _tokenId);
     }
 }
