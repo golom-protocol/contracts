@@ -48,6 +48,8 @@ async function main() {
         golomToken.address
     );
 
+
+
     const rewardDistributor = await RewardDistributor.deploy(
         weth.address,
         golomTrader.address,
@@ -60,12 +62,12 @@ async function main() {
     await golomToken.setMinter(rewardDistributor.address);
     await golomTrader.setDistributor(rewardDistributor.address);
 
-    const Airdrop = await ethers.getContractFactory('GenesisClaim');
-    const airdrop = await Airdrop.deploy(golomToken.address,golomTrader.address,voteEscrow.address);
+    const Airdrop = await hre.ethers.getContractFactory('GenesisClaim');
+    const airdrop = await Airdrop.deploy(golomToken.address,golomTrader.address,voteEscrowDelegation.address);
     console.log("GenesisClaim:",await airdrop.address);
 
-    const actualAirdrop = await ethers.getContractFactory('GolomAidrop');
-    const actualairdrop = await actualAirdrop.deploy(golomToken.address,golomTrader.address,voteEscrow.address);
+    const actualAirdrop = await hre.ethers.getContractFactory('GolomAidrop');
+    const actualairdrop = await actualAirdrop.deploy(golomToken.address,golomTrader.address,voteEscrowDelegation.address);
     console.log("Golomairdrop:",await actualairdrop.address);
 
     const root3 = "0x59947c719780ee4a9bc6ac246a07fa73ccb378647cf30208eb71af9c1b3039b8"
