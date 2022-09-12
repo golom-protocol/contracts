@@ -4,7 +4,7 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 // import { ethers } from 'hardhat';
-const hre = require('hardhat');
+// const hre = require('hardhat');
 const ethers = hre.ethers
 async function main() {
     /**
@@ -87,7 +87,7 @@ async function main() {
     const root_airdrop = "0xde33f7df67166828cdcc2c107cf6a066fdc639a1c1f27efc1156b9d8bde88c79"
 
     await golomToken.mintAirdrop(airdrop.address)
-    await golomToken.mintGenesisReward(actualAirdrop.address)
+    await golomToken.mintGenesisReward(actualairdrop.address)
 
     console.log(await actualairdrop.isMerkleRootSet())
 
@@ -100,19 +100,31 @@ async function main() {
     await airdrop.setMerkleRoot(root3);
     console.log(await airdrop.isMerkleRootSet())
     const proof3 = [
-        '0xf6e1fc995aea35caed4af192774a2d7f11cf422f7f0141071e4776ebc0f1d39e',
-        '0xe9d333a836733bd7c62683827b784be8918f5d2f1f47f8cd3e909a247503003b',
-        '0x1b96b359460ddb4ca7aaf475d92c942e046c203c7f9d3e6e0e5d9f656f07b23c',
-        '0xb13b5adb6c22ca2e1f94dc0ee1236857868129cea2936c9e2f5ad10ceb2d57ce',
-        '0x380992f70d6dbc2e06b270bfb01cf3a9746a40b22c3dd2186139114a11a6237d'
-      ]
+        "0x87bf302644e3481e0bde848f7ab763c09ff45316234948f23c51c5a905aa8643",
+        "0x9fd2f874ef838eba5b6790783d9ffaca416d7dad5c482ccfb7f4b72cdd038930",
+        "0x0f20acaa50a2e7194ddedf48a06517f1838799061d757a94431e51187957142b",
+        "0x793bd5b29aeea1840dcaa59ee71babbcb7c67a80e4fa2bb24a9b18ae6d6caf34",
+        "0xdd62d3181eb73fe7ee21c1176366ee520089c811951fc9ba2b10544bf2780ebc",
+        "0x24da1d9d9bd77037df1d186613783f0d60cc37d22409aaa191b5cf70cfb2c569",
+        "0x9320e4d3887e10121b462155009251a76a32768adef19f174aae066e53dfe39e",
+        "0x45f0d2dafe3158bf9f0db3a67272829346b6aa183e282252b9195d6a04bd41dc",
+        "0xf912a73e2a8f55d5c9af8946669fdf27deb2a281c6735fd4c74388ef1afec3b7",
+        "0x90d10c98d5ac8a733d8512d49c27aa7ea8154768909146186ea5a4848ac47eda",
+        "0x288df5baa33f07c2f762bb5855d3ef48f10f56b12952e88cbd8a269dbf648564",
+        "0x600350654e9f3c0b55c227db0a9e282c312af4da96ed9afc701c8d3f2bf0b967",
+        "0x72e9b89f5490eb508e9f7b8da57c3b7f820a9eaf201faf2eff1d91610c24db9b",
+        "0x2a86930ba00ba697df1aadfb25533260ea3b63b9e870b5433eaa84b3477d3fa6",
+        "0xca1d7b0a079d99b5e08cbe00631c434d8d81944a7d9f2798936ba01ca1dd05d0",
+        "0xe521685009ce88762d7c244d8eb487bab3acc3e74d7e92d210b3f0c6eb659dce",
+        "0x837dbdfc6415748ad544ab1e0f02f0ee07e1dd754a710f4d3c53dcae6b56e416"
+        ]
     console.log(proof3)
-    const amt = hre.ethers.utils.parseEther("0.1952")
-    const abiencoded2 = hre.ethers.utils.solidityKeccak256(["address", "uint256"], ["0x61e5d7496cdc8cdce7a072595697f54fb5d505ef",amt]);
+    const amt = hre.ethers.utils.parseEther("500")
+    const abiencoded2 = hre.ethers.utils.solidityKeccak256(["address", "uint256"], ["0x74b71fd62b7c8c72f1c5cf5c15321967744cf465",amt]);
     console.log(abiencoded2)
 
-    const d = await airdrop.canClaim(
-        "0x61e5d7496cdc8cdce7a072595697f54fb5d505ef",
+    const d = await actualairdrop.canClaim(
+        "0x74b71fd62b7c8c72f1c5cf5c15321967744cf465",
         amt,
         proof3)
     console.log(d)

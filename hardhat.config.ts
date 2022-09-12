@@ -35,7 +35,7 @@ export default {
             allowUnlimitedContractSize: true,
             gas: 12000000,
             blockGasLimit: 0x1fffffffffffff,
-
+            chainId: 1
         },
         mainnet: {
             url: 'https://eth.golom.io',

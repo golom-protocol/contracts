@@ -7,7 +7,7 @@
 
 const hre = require('hardhat');
 
-async function main() {
+async function notmain() {
     /**
      *  STEPS for Final Deployment
      *  1. deploy timelock
@@ -22,7 +22,7 @@ async function main() {
 
 
     const GOVERNANCE = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
-    const GENESIS_START_TIME = '1662321600'; // 25th May 2022, 00.00 AM GST
+    const GENESIS_START_TIME = '1664654400'; // 25th May 2022, 00.00 AM GST
 
     const GolomTrader = await hre.ethers.getContractFactory('GolomTrader');
     const GolomToken = await hre.ethers.getContractFactory('GolomToken');
@@ -98,7 +98,7 @@ async function main() {
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-main().catch((error) => {
+notmain().catch((error) => {
     console.error(error);
     process.exitCode = 1;
 });

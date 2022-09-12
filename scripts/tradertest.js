@@ -37,7 +37,7 @@ async function main() {
 
     // deployment script
     const GOVERNANCE = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
-    const GENESIS_START_TIME = '1662321600'; // 25th May 2022, 00.00 AM GST
+    const GENESIS_START_TIME = '1663617600'; // 25th May 2022, 00.00 AM GST
 
     const Weth = await hre.ethers.getContractFactory('WETH');
     const weth = await Weth.deploy();
@@ -219,7 +219,7 @@ async function mainbid() {
     const [owner, addr1, addr2, addr3] = await hre.ethers.getSigners();
 
     const GOVERNANCE = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
-    const GENESIS_START_TIME = '1662321600'; // 25th May 2022, 00.00 AM GST
+    const GENESIS_START_TIME = '1663617600'; // 25th May 2022, 00.00 AM GST
 
     const Weth = await hre.ethers.getContractFactory('WETH');
     const weth = await Weth.deploy();
@@ -341,7 +341,7 @@ async function mainbid() {
     var d = await trader.connect(addr1).fillBid(order, 1, null_address, [0, "0x6067D233D5eA619d464a218eAf9921B9343e4d16"]);
     console.log(":P")
     receipt = await d.wait();
-    console.log(receipt.cumulativeGasUsed);
+    console.log(parseInt(receipt.cumulativeGasUsed));
 
     receipt = await (await gameitem.mint(addr1.address)).wait();
     tokenid = parseInt(receipt.events[0].args[2]);
