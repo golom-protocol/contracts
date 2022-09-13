@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.11;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
+import '../utils/Ownable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import 'hardhat/console.sol';
 
@@ -43,7 +43,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
     mapping(bytes32 => uint256) public filled;
 
     ERC20 WETH;
-    
+
     struct Order {
         address collection; // NFT contract address
         uint256 tokenId; // order for which tokenId of the collection
@@ -106,7 +106,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
     constructor(address _governance, address _weth) {
         // sets governance as owner
         _transferOwnership(_governance);
-        WETH = ERC20(_weth);        
+        WETH = ERC20(_weth);
     }
 
     function hashPayment(Payment calldata p) private pure returns (bytes32) {
@@ -152,8 +152,8 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         if (payAmt > 0) {
             // if royalty has to be paid
             // payable(payAddress).transfer(payAmt); // royalty transfer to royaltyaddress
-            (bool success, ) = payable(payAddress).call{value: payAmt}(""); // royalty transfer to royaltyaddress
-            require(success, "Transfer failed.");
+            (bool success, ) = payable(payAddress).call{value: payAmt}(''); // royalty transfer to royaltyaddress
+            require(success, 'Transfer failed.');
         }
     }
 
@@ -232,7 +232,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         // attached ETH value should be greater than total value of one NFT * total number of NFTs + any extra payment to be given
         require(msg.value == o.totalAmt * amount + p.paymentAmt, 'mgmtm');
 
-        require(o.totalAmt * amount * 20/100 >= p.paymentAmt, 'can only pay 20% extra');
+        require((o.totalAmt * amount * 20) / 100 >= p.paymentAmt, 'can only pay 20% extra');
 
         if (o.reservedAddress != address(0)) {
             require(msg.sender == o.reservedAddress);
@@ -302,10 +302,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         address referrer,
         Payment calldata p
     ) public nonReentrant {
-        require(
-            o.totalAmt * amount >=
-                (o.exchange.paymentAmt + o.prePayment.paymentAmt) * amount + p.paymentAmt
-        ); // cause bidder eth is paying for seller payment p , dont take anything extra from seller //#180
+        require(o.totalAmt * amount >= (o.exchange.paymentAmt + o.prePayment.paymentAmt) * amount + p.paymentAmt); // cause bidder eth is paying for seller payment p , dont take anything extra from seller //#180
         // require eth amt is sufficient
         //TODO smart contract reserved address vulnerability
         if (o.reservedAddress != address(0)) {
@@ -335,7 +332,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         require(o.signer == msg.sender);
         (uint256 fulfillOrCancelled, bytes32 hashStruct, ) = validateOrder(o);
 
-        require(fulfillOrCancelled != 2, "Order has been fulfiled or cancelled.");
+        require(fulfillOrCancelled != 2, 'Order has been fulfiled or cancelled.');
 
         filled[hashStruct] = o.tokenAmt + 1;
         emit OrderCancelled(hashStruct);
@@ -364,10 +361,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         address referrer,
         Payment calldata p
     ) public nonReentrant {
-        require(
-            o.totalAmt * amount >=
-                (o.exchange.paymentAmt + o.prePayment.paymentAmt) * amount + p.paymentAmt
-        ); // cause bidder eth is paying for seller payment p , dont take anything extra from seller //#180
+        require(o.totalAmt * amount >= (o.exchange.paymentAmt + o.prePayment.paymentAmt) * amount + p.paymentAmt); // cause bidder eth is paying for seller payment p , dont take anything extra from seller //#180
 
         if (o.reservedAddress != address(0)) {
             require(msg.sender == o.reservedAddress);
@@ -407,7 +401,7 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         address referrer,
         Payment calldata p
     ) internal {
-        uint256 protocolfee = (o.totalAmt * 50) / 10000 ; // protocol fee per amount
+        uint256 protocolfee = (o.totalAmt * 50) / 10000; // protocol fee per amount
         WETH.transferFrom(o.signer, address(this), o.totalAmt * amount);
         WETH.withdraw(o.totalAmt * amount);
         payEther(protocolfee * amount, address(distributor));
@@ -471,11 +465,10 @@ contract GolomTrader is Ownable, ReentrancyGuard {
     /// @notice Sets the distributor contract
     /// @param _distributor Address of the distributor
     function setDistributor(address _distributor) external onlyOwner {
-            distributor = Distributor(_distributor);
+        distributor = Distributor(_distributor);
     }
 
     fallback() external payable {}
 
     receive() external payable {}
-
 }

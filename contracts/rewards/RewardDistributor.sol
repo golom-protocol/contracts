@@ -5,7 +5,7 @@ pragma solidity 0.8.11;
 // is minter of token, first interaction mints tokens and distributes tokens
 // gives prorata tokens to traders and exchange daily
 
-import '@openzeppelin/contracts/access/Ownable.sol';
+import '../utils/Ownable.sol';
 import 'hardhat/console.sol';
 
 interface ERC20 {
@@ -77,7 +77,7 @@ contract RewardDistributor is Ownable {
         address _token,
         address _governance,
         address _voteEscrow,
-        uint _startTime
+        uint256 _startTime
     ) {
         weth = ERC20(_weth);
         trader = _trader;
@@ -99,7 +99,6 @@ contract RewardDistributor is Ownable {
     /// @param addr the address that contributed in fees
     /// @param fee the fee contributed by these addresses
     function addFee(address[2] memory addr, uint256 fee) public onlyTrader {
-        
         // if 24 hours have passed since last epoch change
         if (block.timestamp > startTime + (epoch) * secsInDay) {
             // this assumes atleast 1 trade is done daily , ensured by a keeper bot
@@ -109,28 +108,28 @@ contract RewardDistributor is Ownable {
             // emissions is decided by epoch begiining locked/circulating , and amount each nft gets also decided at epoch begining except for epoch 0
 
             // deposit previous epoch fee to weth for distribution to stakers
-            epochTotalFee[epoch] =  address(this).balance; 
-            weth.deposit{value: address(this).balance}();  
+            epochTotalFee[epoch] = address(this).balance;
+            weth.deposit{value: address(this).balance}();
 
             epoch = epoch + 1;
             epochBeginTime[epoch] = block.number;
 
-
             if (rewardToken.totalSupply() > 1000000000 * 10**18) {
-            // if supply is greater then a billion dont mint anything, but add trades
-                emit NewEpoch(epoch, 0, 0, epochTotalFee[epoch-1]);
-            }else{
-                uint256 tokenToEmit = (dailyEmission * (rewardToken.totalSupply() - rewardToken.balanceOf(address(ve)))) /
-                rewardToken.totalSupply();
+                // if supply is greater then a billion dont mint anything, but add trades
+                emit NewEpoch(epoch, 0, 0, epochTotalFee[epoch - 1]);
+            } else {
+                uint256 tokenToEmit = (dailyEmission *
+                    (rewardToken.totalSupply() - rewardToken.balanceOf(address(ve)))) / rewardToken.totalSupply();
                 uint256 stakerReward = (tokenToEmit * rewardToken.balanceOf(address(ve))) / rewardToken.totalSupply();
                 rewardStaker[epoch] = stakerReward;
                 rewardTrader[epoch] = ((tokenToEmit - stakerReward) * 67) / 100;
                 rewardExchange[epoch] = ((tokenToEmit - stakerReward) * 33) / 100;
                 rewardToken.mint(address(this), tokenToEmit);
-                emit NewEpoch(epoch, tokenToEmit, stakerReward, epochTotalFee[epoch-1]);
+                emit NewEpoch(epoch, tokenToEmit, stakerReward, epochTotalFee[epoch - 1]);
             }
         }
-        if (epoch>0){ // start noting contribution to fees by both trader and excahnge if epoch > 0
+        if (epoch > 0) {
+            // start noting contribution to fees by both trader and excahnge if epoch > 0
             feesTrader[addr[0]][epoch] = feesTrader[addr[0]][epoch] + fee;
             feesExchange[addr[1]][epoch] = feesExchange[addr[1]][epoch] + fee;
         }
@@ -184,17 +183,16 @@ contract RewardDistributor is Ownable {
                 require(epochs[index] < epoch, 'cant claim for future epochs');
                 require(claimed[tokenids[tindex]][epochs[index]] == 0, 'cant claim if already claimed');
                 claimed[tokenids[tindex]][epochs[index]] = 1;
-                if (epochs[index] == 0){
+                if (epochs[index] == 0) {
                     rewardEth =
                         rewardEth +
-                        (epochTotalFee[0] *
-                            ve.balanceOfAtNFT(tokenids[tindex], epochBeginTime[1])) /
+                        (epochTotalFee[0] * ve.balanceOfAtNFT(tokenids[tindex], epochBeginTime[1])) /
                         ve.totalSupplyAt(epochBeginTime[1]);
-
-                }else{
+                } else {
                     reward =
                         reward +
-                        (rewardStaker[epochs[index]] * ve.balanceOfAtNFT(tokenids[tindex], epochBeginTime[epochs[index]])) /
+                        (rewardStaker[epochs[index]] *
+                            ve.balanceOfAtNFT(tokenids[tindex], epochBeginTime[epochs[index]])) /
                         ve.totalSupplyAt(epochBeginTime[epochs[index]]);
                     rewardEth =
                         rewardEth +
@@ -202,21 +200,23 @@ contract RewardDistributor is Ownable {
                             ve.balanceOfAtNFT(tokenids[tindex], epochBeginTime[epochs[index]])) /
                         ve.totalSupplyAt(epochBeginTime[epochs[index]]);
                 }
-
             }
         }
         rewardToken.transfer(tokenowner, reward);
         weth.transfer(tokenowner, rewardEth);
     }
 
-
     /// @dev returns unclaimed rewards of an NFT, returns (unclaimed golom rewards, unclaimed eth rewards, unclaimed epochs)
     /// @param tokenid the nft id to claim rewards for all ids in the list must belong to 1 address
-    function stakerRewards(uint256 tokenid) public view returns (
+    function stakerRewards(uint256 tokenid)
+        public
+        view
+        returns (
             uint256,
             uint256,
             uint256[] memory
-        ){
+        )
+    {
         require(address(ve) != address(0), ' VE not added yet');
 
         uint256 reward = 0;
@@ -224,24 +224,21 @@ contract RewardDistributor is Ownable {
         uint256[] memory unclaimedepochs = new uint256[](epoch);
         // for each epoch
         for (uint256 index = 0; index < epoch; index++) {
-            unclaimedepochs[index]=claimed[tokenid][index];
-            if (claimed[tokenid][index] == 0){
-                if (index == 0){
+            unclaimedepochs[index] = claimed[tokenid][index];
+            if (claimed[tokenid][index] == 0) {
+                if (index == 0) {
                     rewardEth =
                         rewardEth +
-                        (epochTotalFee[0] *
-                            ve.balanceOfAtNFT(tokenid, epochBeginTime[1])) /
+                        (epochTotalFee[0] * ve.balanceOfAtNFT(tokenid, epochBeginTime[1])) /
                         ve.totalSupplyAt(epochBeginTime[1]);
-
-                }else{
+                } else {
                     reward =
                         reward +
                         (rewardStaker[index] * ve.balanceOfAtNFT(tokenid, epochBeginTime[index])) /
                         ve.totalSupplyAt(epochBeginTime[index]);
                     rewardEth =
                         rewardEth +
-                        (epochTotalFee[index] *
-                            ve.balanceOfAtNFT(tokenid, epochBeginTime[index])) /
+                        (epochTotalFee[index] * ve.balanceOfAtNFT(tokenid, epochBeginTime[index])) /
                         ve.totalSupplyAt(epochBeginTime[index]);
                 }
             }
@@ -251,30 +248,20 @@ contract RewardDistributor is Ownable {
 
     /// @dev returns unclaimed rewards of an NFT, returns (unclaimed golom rewards, unclaimed eth rewards, unclaimed epochs)
     /// @param addr the nft id to claim rewards for all ids in the list must belong to 1 address
-    function traderRewards(address addr) public view returns (
-            uint256        
-            ){
+    function traderRewards(address addr) public view returns (uint256) {
         uint256 reward = 0;
         for (uint256 index = 0; index < epoch; index++) {
-            reward =
-                reward +
-                (rewardTrader[index] * feesTrader[addr][index]) /
-                epochTotalFee[index];
+            reward = reward + (rewardTrader[index] * feesTrader[addr][index]) / epochTotalFee[index];
         }
         return (reward);
     }
 
     /// @dev returns unclaimed golom rewards of a trader
     /// @param addr the nft id to claim rewards for all ids in the list must belong to 1 address
-    function exchangeRewards(address addr) public view returns (
-            uint256
-        ){
+    function exchangeRewards(address addr) public view returns (uint256) {
         uint256 reward = 0;
         for (uint256 index = 0; index < epoch; index++) {
-            reward =
-                reward +
-                (rewardExchange[index] * feesExchange[addr][index]) /
-                epochTotalFee[index];
+            reward = reward + (rewardExchange[index] * feesExchange[addr][index]) / epochTotalFee[index];
         }
         return (reward);
     }

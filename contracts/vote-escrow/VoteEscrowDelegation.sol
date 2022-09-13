@@ -5,7 +5,7 @@ pragma solidity 0.8.11;
 
 // import {Math} from '@openzeppelin-contracts/utils/math/SafeCast.sol';
 
-import '@openzeppelin/contracts/access/Ownable.sol';
+import '../utils/Ownable.sol';
 
 import {VoteEscrowCore} from './VoteEscrowCore.sol';
 
