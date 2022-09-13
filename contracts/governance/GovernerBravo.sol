@@ -18,8 +18,8 @@ contract GovernorAlpha {
     } // 400,000 = 4% of Comp
 
     /// @notice The number of votes required in order for a voter to become a proposer
-    function proposalThreshold() public pure returns (uint256) {
-        return 100000e18;
+    function proposalThreshold() public view returns (uint256) {
+        return voteEscrow.totalSupply() * ((uint256(1) * 1e6) / 1e8);
     } // 100,000 = 1% of Comp
 
     /// @notice The maximum number of actions that can be included in a proposal
