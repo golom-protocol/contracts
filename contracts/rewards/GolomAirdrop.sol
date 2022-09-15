@@ -90,7 +90,7 @@ contract GolomAidrop is Pausable, ReentrancyGuard, Ownable {
                 keccak256(bytes('GOLOM.IO')),
                 keccak256(bytes('1')),
                 chainId,
-                address(this)
+                _trader
             )
         );
         endTimestamp = 1668628800;

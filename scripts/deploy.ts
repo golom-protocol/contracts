@@ -48,7 +48,7 @@ async function notmain() {
         golomToken.address
     );
 
-
+    console.log("WETH",weth.address)
 
     const rewardDistributor = await RewardDistributor.deploy(
         weth.address,
