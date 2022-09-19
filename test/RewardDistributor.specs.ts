@@ -42,7 +42,7 @@ let taker: any;
 let exchange: any;
 let prepay: any;
 let postpay: any;
-let receiver: "0x0000000000000000000000000000000000000000";
+let receiver: '0x0000000000000000000000000000000000000000';
 
 let domain: any;
 
@@ -93,15 +93,12 @@ describe('RewardDistributor.sol', function () {
 
         genesisStartTime = Math.floor(Date.now() / 1000);
 
-        rewardDistributor = (await (
-            await RewardDistributorArtifacts
-        ).deploy(
+        rewardDistributor = (await (await RewardDistributorArtifacts).deploy(
             weth.address,
             golomTrader.address,
             golomToken.address,
             await governance.getAddress()
         )) as RewardDistributorTypes;
-
 
         await golomToken.connect(governance).mintGenesisReward(rewardDistributor.address);
         await golomToken.connect(governance).setMinter(rewardDistributor.address);
@@ -372,6 +369,5 @@ async function getTimestamp() {
     const blockNumBefore = await ethers.provider.getBlockNumber();
     const blockBefore = await ethers.provider.getBlock(blockNumBefore);
     const timestamp = blockBefore.timestamp;
-
     return timestamp;
 }

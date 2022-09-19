@@ -232,15 +232,6 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         _writeCheckpoint(tokenId, nCheckpoints, latestCheckpoints.delegatedTokenIds);
     }
 
-    // /// @notice Remove delegation by user
-    // function removeDelegationByOwner(uint256 delegatedTokenId, uint256 ownerTokenId) external {
-    //     require(ownerOf(ownerTokenId) == msg.sender, 'VEDelegation: Not allowed');
-    //     uint256 nCheckpoints = numCheckpoints[delegatedTokenId];
-    //     Checkpoint storage checkpoint = checkpoints[delegatedTokenId][nCheckpoints - 1];
-    //     removeElement(checkpoint.delegatedTokenIds, delegatedTokenId);
-    //     _writeCheckpoint(ownerTokenId, nCheckpoints, checkpoint.delegatedTokenIds);
-    // }
-
     /// @dev Exeute transfer of a NFT.
     ///      Throws unless `msg.sender` is the current owner, an authorized operator, or the approved
     ///      address for this NFT. (NOTE: `msg.sender` not allowed in internal function so pass `_sender`.)
