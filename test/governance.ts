@@ -45,8 +45,7 @@ let tokenUriHelper: any;
 
 let accounts: Signer[];
 let governance: Signer;
-let maker: any;
-let taker: any;
+let userA: any;
 let exchange: any;
 let prepay: any;
 let postpay: any;
@@ -57,42 +56,83 @@ let domain: any;
 let genesisStartTime: number;
 
 describe('RewardDistributor.sol', async () => {
-    beforeEach(async () => {});
+    beforeEach(async () => {
+        accounts = await ethers.getSigners();
+        userA = accounts[0];
+        exchange = accounts[2];
+        prepay = accounts[3];
+        postpay = accounts[4];
+        governance = accounts[5];
 
-    accounts = await ethers.getSigners();
-    maker = accounts[0];
-    taker = accounts[1];
-    exchange = accounts[2];
-    prepay = accounts[3];
-    postpay = accounts[4];
-    governance = accounts[5];
+        testErc20 = (await (await ERC20MockArtifacts).deploy()) as ERC20MockTypes;
+        testErc721 = (await (await ERC721MockArtifacts).deploy()) as ERC721MockTypes;
+        testErc1155 = (await (await ERC1155MockArtifacts).deploy()) as ERC1155MockTypes;
+        weth = (await (await WETHArtifacts).deploy()) as WETHTypes;
 
-    testErc20 = (await (await ERC20MockArtifacts).deploy()) as ERC20MockTypes;
-    testErc721 = (await (await ERC721MockArtifacts).deploy()) as ERC721MockTypes;
-    testErc1155 = (await (await ERC1155MockArtifacts).deploy()) as ERC1155MockTypes;
-    weth = (await (await WETHArtifacts).deploy()) as WETHTypes;
+        tokenUriHelper = await (await TokenUriHelper).deploy();
 
-    tokenUriHelper = await await tokenUriHelper.deploy();
+        const VoteEscrowArtifacts = ethers.getContractFactory('VoteEscrow', {
+            libraries: {
+                TokenUriHelper: tokenUriHelper.address,
+            },
+        });
 
-    const VoteEscrowArtifacts = ethers.getContractFactory('VoteEscrow', {
-        libraries: {
-            TokenUriHelper: tokenUriHelper.address,
-        },
+        golomToken = (await (await GolomTokenArtifacts).deploy(await governance.getAddress())) as GolomTokenTypes;
+
+        await golomToken.connect(governance).setMinter(await userA.getAddress());
+        await golomToken.mint(await userA.getAddress(), '1000000000000000000000');
+
+        voteEscrow = (await (await VoteEscrowArtifacts).deploy(golomToken.address)) as VoteEscrowTypes;
+
+        // remember: delay must be equal to or more than 2 days
+        timelock = (await (await TimelockArtifacts).deploy(await governance.getAddress(), 172800)) as TimelockTypes;
+
+        governerBravo = (await (await GovernerBravoArtifacts).deploy(
+            timelock.address,
+            voteEscrow.address,
+            governance.getAddress(),
+            voteEscrow.address
+        )) as GovernorAlphaTypes;
     });
 
-    voteEscrow = (await (await VoteEscrowArtifacts).deploy({
-        libraries: {
-            TokenUriHelper: tokenUriHelper.address,
-        },
-    })) as VoteEscrowTypes;
-    golomToken = (await (await GolomTokenArtifacts).deploy(await governance.getAddress())) as GolomTokenTypes;
+    describe('#general', () => {
+        it('propose and vote', async () => {
+            await golomToken.approve(voteEscrow.address, '10000000000000000000000');
+            await voteEscrow.create_lock('10000000000000000000000', '172800');
 
-    timelock = (await (await TimelockArtifacts).deploy(await governance.getAddress(), 2)) as TimelockTypes;
+            console.log('voteEscrow totalSupply', await (await voteEscrow.totalSupply()).toString());
+            const balance = await voteEscrow.balanceOf(await userA.getAddress());
+            const ownerOf = await voteEscrow.ownerOf('1');
+            console.log(ownerOf, await userA.getAddress());
 
-    governerBravo = (await (await GovernerBravoArtifacts).deploy(
-        timelock.address,
-        voteEscrow.address,
-        governance.getAddress(),
-        voteEscrow.address
-    )) as GovernorAlphaTypes;
+            // we're changing owner of the GolomToken
+            // change governance to GovernerAlpha
+            // await golomToken.changeOwner(governerBravo.address);
+
+            const proposalThreshold = await governerBravo.proposalThreshold();
+            console.log({ proposalThreshold: proposalThreshold.toString() });
+
+            // to change the governance successfullt we need to accept the owner from Bravo
+            const tokenId = '1';
+            const targets = [golomToken.address];
+            const values = ['0'];
+            const signatures = ['getBalanceOf(address)'];
+            const callDatas = [encodeParameters(['address'], [userA.address])];
+            const description = 'Test Proposal 1';
+
+            await governerBravo.propose(tokenId, targets, values, signatures, callDatas, description);
+        });
+    });
+
+    // uint256 tokenId,
+    // address[] memory targets,
+    // uint256[] memory values,
+    // string[] memory signatures,
+    // bytes[] memory calldatas,
+    // string memory description
 });
+
+function encodeParameters(types: any, values: any) {
+    const abi = new ethers.utils.AbiCoder();
+    return abi.encode(types, values);
+}
