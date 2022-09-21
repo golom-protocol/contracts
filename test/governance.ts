@@ -80,7 +80,7 @@ describe('RewardDistributor.sol', async () => {
         golomToken = (await (await GolomTokenArtifacts).deploy(await governance.getAddress())) as GolomTokenTypes;
 
         await golomToken.connect(governance).setMinter(await userA.getAddress());
-        await golomToken.mint(await userA.getAddress(), '1000000000000000000000');
+        await golomToken.mint(await userA.getAddress(), toGwei(10000000));
 
         voteEscrow = (await (await VoteEscrowArtifacts).deploy(golomToken.address)) as VoteEscrowTypes;
 
@@ -97,30 +97,68 @@ describe('RewardDistributor.sol', async () => {
 
     describe('#general', () => {
         it('propose and vote', async () => {
-            await golomToken.approve(voteEscrow.address, '10000000000000000000000');
-            await voteEscrow.create_lock('10000000000000000000000', '172800');
+            const tokenId = '1';
 
-            console.log('voteEscrow totalSupply', await (await voteEscrow.totalSupply()).toString());
-            const balance = await voteEscrow.balanceOf(await userA.getAddress());
-            const ownerOf = await voteEscrow.ownerOf('1');
-            console.log(ownerOf, await userA.getAddress());
+            // await golomToken.approve(voteEscrow.address, toGwei(1000));
+            // await voteEscrow.create_lock(toGwei(1000), '86500');
+
+            // const oldBlock = await getCurrentBlock();
+            // const timestamp = oldBlock.timestamp;
+
+            // console.log('oldBlock', oldBlock.number);
+
+            // // await ethers.provider.send('hardhat_mine', ['0x3e8', '0x3c']);
+            // // await ethers.provider.send('evm_setNextBlockTimestamp', [timestamp + 86500]);
+
+            // const newBlock = await getCurrentBlock();
+            // console.log('newBlock', newBlock.number);
+
+            // console.log('voteEscrow totalSupply', await (await voteEscrow.totalSupply()).toString());
+
+            // const getPriorVotes = await voteEscrow.getPriorVotes(tokenId, newBlock.number - 1);
+            // const getVotes = await voteEscrow.balanceOfNFT(tokenId);
+
+            // console.log('getPriorVotes', getPriorVotes);
+            // console.log('getVotes', getVotes);
+
+            const initialBlock = await getCurrentBlock();
+
+            let i: number = 0;
+            while (i < 30) {
+                console.log({ i });
+                let block;
+
+                block = await getCurrentBlock();
+
+                const MAXTIME = 4 * 365 * 86400;
+
+                console.log(block.timestamp + 2, block.timestamp + MAXTIME);
+                console.log(block.timestamp + 2 < block.timestamp + MAXTIME);
+
+                await golomToken.approve(voteEscrow.address, toGwei(1000));
+                await voteEscrow.create_lock(toGwei(1000), block.timestamp + 2);
+                // await ethers.provider.send('evm_mine', [block.timestamp + 86400]);
+            }
+
+            // const balance = await voteEscrow.balanceOf(await userA.getAddress());
+            // const ownerOf = await voteEscrow.ownerOf('1');
+            // console.log(ownerOf, await userA.getAddress());
 
             // we're changing owner of the GolomToken
             // change governance to GovernerAlpha
             // await golomToken.changeOwner(governerBravo.address);
 
-            const proposalThreshold = await governerBravo.proposalThreshold();
-            console.log({ proposalThreshold: proposalThreshold.toString() });
+            // const proposalThreshold = await governerBravo.proposalThreshold();
+            // console.log({ proposalThreshold: proposalThreshold.toString() });
 
-            // to change the governance successfullt we need to accept the owner from Bravo
-            const tokenId = '1';
-            const targets = [golomToken.address];
-            const values = ['0'];
-            const signatures = ['getBalanceOf(address)'];
-            const callDatas = [encodeParameters(['address'], [userA.address])];
-            const description = 'Test Proposal 1';
+            // // to change the governance successfullt we need to accept the owner from Bravo
+            // const targets = [golomToken.address];
+            // const values = ['0'];
+            // const signatures = ['getBalanceOf(address)'];
+            // const callDatas = [encodeParameters(['address'], [userA.address])];
+            // const description = 'Test Proposal 1';
 
-            await governerBravo.propose(tokenId, targets, values, signatures, callDatas, description);
+            // await governerBravo.propose(tokenId, targets, values, signatures, callDatas, description);
         });
     });
 
@@ -135,4 +173,13 @@ describe('RewardDistributor.sol', async () => {
 function encodeParameters(types: any, values: any) {
     const abi = new ethers.utils.AbiCoder();
     return abi.encode(types, values);
+}
+
+const toGwei = (_number: any) => {
+    return (_number * 1e18).toLocaleString('fullwide', { useGrouping: false });
+};
+
+async function getCurrentBlock() {
+    const blockNumber = await ethers.provider.getBlockNumber();
+    return await ethers.provider.getBlock(blockNumber);
 }
