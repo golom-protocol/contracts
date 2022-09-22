@@ -11,6 +11,7 @@ const GolomTokenArtifacts = ethers.getContractFactory('GolomToken');
 const GovernerBravoArtifacts = ethers.getContractFactory('GovernorAlpha');
 const TimelockArtifacts = ethers.getContractFactory('Timelock');
 const TokenUriHelper = ethers.getContractFactory('TokenUriHelper');
+const GolomTreasuryArtifacts = ethers.getContractFactory('GolomTreasury');
 
 const ERC721MockArtifacts = ethers.getContractFactory('ERC721Mock');
 const ERC1155MockArtifacts = ethers.getContractFactory('ERC1155Mock');
@@ -29,6 +30,7 @@ import { ERC20Mock as ERC20MockTypes } from '../typechain/ERC20Mock';
 import { WETH as WETHTypes } from '../typechain/WETH';
 import { Timelock as TimelockTypes } from './../typechain/Timelock';
 import { GovernorAlpha as GovernorAlphaTypes } from './../typechain/GovernorAlpha';
+import { GolomTreasury as GolomTreasuryTypes } from './../typechain/GolomTreasury';
 
 let testErc20: ERC20MockTypes;
 let testErc721: ERC721MockTypes;
@@ -42,6 +44,7 @@ let rewardDistributor: RewardDistributorTypes;
 let timelock: TimelockTypes;
 let governerBravo: GovernorAlphaTypes;
 let tokenUriHelper: any;
+let golomTreasury: GolomTreasuryTypes;
 
 let accounts: Signer[];
 let governance: Signer;
@@ -93,33 +96,50 @@ describe('RewardDistributor.sol', async () => {
             governance.getAddress(),
             voteEscrow.address
         )) as GovernorAlphaTypes;
+
+        // to change the governance successfullt we need to accept the owner from Bravo
+
+        const setTimlockAdmin = {
+            targets: timelock.address,
+            values: '0',
+            signatures: 'setPendingAdmin(address)',
+            callDatas: encodeParameters(['address'], [governerBravo.address]),
+            eta: (await (await getCurrentBlock()).timestamp) + 172900,
+        };
+
+        await timelock
+            .connect(governance)
+            .queueTransaction(
+                setTimlockAdmin.targets,
+                setTimlockAdmin.values,
+                setTimlockAdmin.signatures,
+                setTimlockAdmin.callDatas,
+                setTimlockAdmin.eta
+            );
+
+        await ethers.provider.send('evm_mine', [(await (await getCurrentBlock()).timestamp) + 3 * 86400]);
+
+        await timelock
+            .connect(governance)
+            .executeTransaction(
+                setTimlockAdmin.targets,
+                setTimlockAdmin.values,
+                setTimlockAdmin.signatures,
+                setTimlockAdmin.callDatas,
+                setTimlockAdmin.eta
+            );
+
+        await governerBravo.connect(governance).__acceptAdmin();
+
+        golomTreasury = (await (await GolomTreasuryArtifacts).deploy(
+            timelock.address,
+            golomToken.address
+        )) as GolomTreasuryTypes;
     });
 
     describe('#general', () => {
         it('propose and vote', async () => {
             const tokenId = '2';
-
-            // await golomToken.approve(voteEscrow.address, toGwei(1000));
-            // await voteEscrow.create_lock(toGwei(1000), '86500');
-
-            // const oldBlock = await getCurrentBlock();
-            // const timestamp = oldBlock.timestamp;
-
-            // console.log('oldBlock', oldBlock.number);
-
-            // // await ethers.provider.send('hardhat_mine', ['0x3e8', '0x3c']);
-            // // await ethers.provider.send('evm_setNextBlockTimestamp', [timestamp + 86500]);
-
-            // const newBlock = await getCurrentBlock();
-            // console.log('newBlock', newBlock.number);
-
-            // console.log('voteEscrow totalSupply', await (await voteEscrow.totalSupply()).toString());
-
-            // const getPriorVotes = await voteEscrow.getPriorVotes(tokenId, newBlock.number - 1);
-            // const getVotes = await voteEscrow.balanceOfNFT(tokenId);
-
-            // console.log('getPriorVotes', getPriorVotes);
-            // console.log('getVotes', getVotes);
 
             const initialBlock = await getCurrentBlock();
 
@@ -129,11 +149,6 @@ describe('RewardDistributor.sol', async () => {
                 let block;
 
                 block = await getCurrentBlock();
-
-                // const MAXTIME = 4 * 365 * 86400;
-
-                // console.log(block.timestamp + 2, block.timestamp + MAXTIME);
-                // console.log(block.timestamp + 2 < block.timestamp + MAXTIME);
 
                 await golomToken.approve(voteEscrow.address, toGwei(10000));
                 const lockTx = await voteEscrow.create_lock(toGwei(10000), 10 * 604800);
@@ -155,10 +170,6 @@ describe('RewardDistributor.sol', async () => {
             const ownerOf = await voteEscrow.ownerOf('1');
             console.log(ownerOf, await userA.getAddress());
 
-            // we're changing owner of the GolomToken
-            // change governance to GovernerAlpha
-            // await golomToken.connect(governance).changeOwner(governerBravo.address);
-
             const proposalThreshold = await governerBravo.proposalThreshold();
 
             console.log({ proposalThreshold: proposalThreshold.toString() });
@@ -171,13 +182,51 @@ describe('RewardDistributor.sol', async () => {
             console.log('balance of user', await voteEscrow.getPriorVotes('2', currentBlock.number - 1));
 
             // to change the governance successfullt we need to accept the owner from Bravo
-            const targets = [golomToken.address];
-            const values = ['0'];
-            const signatures = ['getBalanceOf(address)'];
-            const callDatas = [encodeParameters(['address'], [userA.address])];
-            const description = 'Test Proposal 1';
 
-            await governerBravo.propose(tokenId, targets, values, signatures, callDatas, description);
+            const newPendingOwner = await userA.getAddress();
+            console.log({ newPendingOwner });
+
+            const targets = [golomTreasury.address];
+            const values = ['0'];
+            const signatures = ['changeOwner(address)'];
+            const callDatas = [encodeParameters(['address'], [newPendingOwner])];
+            const description = 'Change Owner of Golom Token';
+
+            const proposeTx = await (
+                await governerBravo.propose(tokenId, targets, values, signatures, callDatas, description)
+            ).wait();
+
+            const proposalId = new ethers.utils.Interface(ProposalCreatedEventABI)
+                .parseLog(proposeTx.logs[0])
+                .args.id.toString();
+
+            // make the proposal in active state
+            await ethers.provider.send('hardhat_mine', [utils.hexValue(1000)]);
+
+            // caste vote
+            await governerBravo.castVote(tokenId, proposalId, true);
+
+            console.log('latest block', (await getCurrentBlock()).number);
+
+            // end the voting duration
+            await ethers.provider.send('hardhat_mine', [utils.hexValue(17000)]);
+
+            // queue the voting (cannot do in same block hence increasing)
+            await ethers.provider.send('hardhat_mine', [utils.hexValue(1000)]);
+            await governerBravo.connect(governance).queue(proposalId);
+
+            // execute the proposal, need to surpass timelock
+            await ethers.provider.send('hardhat_mine', [utils.hexValue(1)]);
+            await ethers.provider.send('evm_mine', [(await getCurrentBlock()).timestamp + 3 * 172800]);
+            console.log('executing now');
+            await governerBravo.connect(governance).execute(proposalId);
+
+            let proposalState;
+            proposalState = await governerBravo.state(proposalId);
+
+            console.log({ proposalState });
+
+            expect(await golomTreasury.pendingOwner()).to.be.equals(await userA.getAddress());
         });
     });
 
@@ -190,7 +239,11 @@ describe('RewardDistributor.sol', async () => {
 });
 
 function encodeParameters(types: any, values: any) {
+    console.log({
+        valiess: values,
+    });
     const abi = new ethers.utils.AbiCoder();
+    console.log(abi.encode(types, values));
     return abi.encode(types, values);
 }
 
@@ -202,3 +255,67 @@ async function getCurrentBlock() {
     const blockNumber = await ethers.provider.getBlockNumber();
     return await ethers.provider.getBlock(blockNumber);
 }
+
+const ProposalCreatedEventABI = [
+    {
+        anonymous: false,
+        inputs: [
+            {
+                indexed: false,
+                internalType: 'uint256',
+                name: 'id',
+                type: 'uint256',
+            },
+            {
+                indexed: false,
+                internalType: 'address',
+                name: 'proposer',
+                type: 'address',
+            },
+            {
+                indexed: false,
+                internalType: 'address[]',
+                name: 'targets',
+                type: 'address[]',
+            },
+            {
+                indexed: false,
+                internalType: 'uint256[]',
+                name: 'values',
+                type: 'uint256[]',
+            },
+            {
+                indexed: false,
+                internalType: 'string[]',
+                name: 'signatures',
+                type: 'string[]',
+            },
+            {
+                indexed: false,
+                internalType: 'bytes[]',
+                name: 'calldatas',
+                type: 'bytes[]',
+            },
+            {
+                indexed: false,
+                internalType: 'uint256',
+                name: 'startBlock',
+                type: 'uint256',
+            },
+            {
+                indexed: false,
+                internalType: 'uint256',
+                name: 'endBlock',
+                type: 'uint256',
+            },
+            {
+                indexed: false,
+                internalType: 'string',
+                name: 'description',
+                type: 'string',
+            },
+        ],
+        name: 'ProposalCreated',
+        type: 'event',
+    },
+];

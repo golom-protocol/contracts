@@ -156,7 +156,7 @@ contract GovernorAlpha {
         comp = CompInterface(comp_);
         guardian = guardian_;
         voteEscrow = IVoteEscrow(voteEscrow_);
-        proposalLatestBlock = block.timestamp;
+        proposalLatestBlock = block.number;
     }
 
     function propose(
