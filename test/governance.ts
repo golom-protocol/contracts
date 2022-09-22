@@ -97,7 +97,7 @@ describe('RewardDistributor.sol', async () => {
 
     describe('#general', () => {
         it('propose and vote', async () => {
-            const tokenId = '1';
+            const tokenId = '2';
 
             // await golomToken.approve(voteEscrow.address, toGwei(1000));
             // await voteEscrow.create_lock(toGwei(1000), '86500');
@@ -130,35 +130,54 @@ describe('RewardDistributor.sol', async () => {
 
                 block = await getCurrentBlock();
 
-                const MAXTIME = 4 * 365 * 86400;
+                // const MAXTIME = 4 * 365 * 86400;
 
-                console.log(block.timestamp + 2, block.timestamp + MAXTIME);
-                console.log(block.timestamp + 2 < block.timestamp + MAXTIME);
+                // console.log(block.timestamp + 2, block.timestamp + MAXTIME);
+                // console.log(block.timestamp + 2 < block.timestamp + MAXTIME);
 
-                await golomToken.approve(voteEscrow.address, toGwei(1000));
-                await voteEscrow.create_lock(toGwei(1000), block.timestamp + 2);
-                // await ethers.provider.send('evm_mine', [block.timestamp + 86400]);
+                await golomToken.approve(voteEscrow.address, toGwei(10000));
+                const lockTx = await voteEscrow.create_lock(toGwei(10000), 10 * 604800);
+                const receipt = await lockTx.wait();
+
+                let abi = ['event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)'];
+                let iface = new ethers.utils.Interface(abi);
+                let log = iface.parseLog(receipt.logs[0]); // here you can add your own logic to find the correct log
+                const { from, to, tokenId } = log.args;
+
+                await ethers.provider.send('evm_mine', [block.timestamp + 10 * 86400]);
+
+                await voteEscrow.delegate(tokenId, 2);
+
+                i++;
             }
 
-            // const balance = await voteEscrow.balanceOf(await userA.getAddress());
-            // const ownerOf = await voteEscrow.ownerOf('1');
-            // console.log(ownerOf, await userA.getAddress());
+            const balance = await voteEscrow.balanceOf(await userA.getAddress());
+            const ownerOf = await voteEscrow.ownerOf('1');
+            console.log(ownerOf, await userA.getAddress());
 
             // we're changing owner of the GolomToken
             // change governance to GovernerAlpha
-            // await golomToken.changeOwner(governerBravo.address);
+            // await golomToken.connect(governance).changeOwner(governerBravo.address);
 
-            // const proposalThreshold = await governerBravo.proposalThreshold();
-            // console.log({ proposalThreshold: proposalThreshold.toString() });
+            const proposalThreshold = await governerBravo.proposalThreshold();
 
-            // // to change the governance successfullt we need to accept the owner from Bravo
-            // const targets = [golomToken.address];
-            // const values = ['0'];
-            // const signatures = ['getBalanceOf(address)'];
-            // const callDatas = [encodeParameters(['address'], [userA.address])];
-            // const description = 'Test Proposal 1';
+            console.log({ proposalThreshold: proposalThreshold.toString() });
+            const totalSupply = (await voteEscrow.totalSupply()).toString();
+            console.log('voteEscrow totalSupply', totalSupply);
+            console.log('1% of totalSupply', parseInt(totalSupply) / 100);
 
-            // await governerBravo.propose(tokenId, targets, values, signatures, callDatas, description);
+            const currentBlock = await getCurrentBlock();
+
+            console.log('balance of user', await voteEscrow.getPriorVotes('2', currentBlock.number - 1));
+
+            // to change the governance successfullt we need to accept the owner from Bravo
+            const targets = [golomToken.address];
+            const values = ['0'];
+            const signatures = ['getBalanceOf(address)'];
+            const callDatas = [encodeParameters(['address'], [userA.address])];
+            const description = 'Test Proposal 1';
+
+            await governerBravo.propose(tokenId, targets, values, signatures, callDatas, description);
         });
     });
 
