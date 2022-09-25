@@ -14,7 +14,7 @@ contract GovernorAlpha {
 
     /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
     function quorumVotes() public view returns (uint256) {
-        return voteEscrow.totalSupply() * ((uint256(40)) / 100);
+        return voteEscrow.totalSupply() * ((uint256(4)) / 100);
     } // 400,000 = 4% of Comp
 
     /// @notice The number of votes required in order for a voter to become a proposer
