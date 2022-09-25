@@ -4,7 +4,7 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 const hre = require('hardhat');
-import { ethers } from 'hardhat';
+// import { ethers } from 'hardhat';
 
 const types = {
     payment: [
@@ -35,8 +35,17 @@ const types = {
 const null_address = '0x0000000000000000000000000000000000000000';
 
 async function main() {
-    await network.provider.send("evm_increaseTime", [24*60*60])
-    await network.provider.send("evm_mine") 
+    // await network.provider.send("evm_increaseTime", [24*60*60])
+    // await network.provider.send("evm_mine") 
+
+    const [owner] = await hre.ethers.getSigners();
+    const transactionHash = await owner.sendTransaction({
+        to: "0x0000000000000000000000000000000000000000",
+        value: hre.ethers.utils.parseEther("1.0"), // Sends exactly 1.0 ether
+      });
+
+    let vEContract = await hre.ethers.getContractAt('VoteEscrow', '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2');
+
 
     // staking period start
     // await network.provider.send("evm_setNextBlockTimestamp", [1625097600])
