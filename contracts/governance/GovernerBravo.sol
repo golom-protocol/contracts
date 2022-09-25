@@ -14,12 +14,12 @@ contract GovernorAlpha {
 
     /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
     function quorumVotes() public view returns (uint256) {
-        return voteEscrow.totalSupply() * ((uint256(40) * 1e6) / 1e8);
+        return voteEscrow.totalSupply() * ((uint256(4)) / 100);
     } // 400,000 = 4% of Comp
 
     /// @notice The number of votes required in order for a voter to become a proposer
     function proposalThreshold() public view returns (uint256) {
-        return voteEscrow.totalSupply() * ((uint256(1) * 1e6) / 1e8);
+        return voteEscrow.totalSupply() / 100;
     } // 100,000 = 1% of Comp
 
     /// @notice The maximum number of actions that can be included in a proposal
@@ -156,7 +156,7 @@ contract GovernorAlpha {
         comp = CompInterface(comp_);
         guardian = guardian_;
         voteEscrow = IVoteEscrow(voteEscrow_);
-        proposalLatestBlock = block.timestamp;
+        proposalLatestBlock = block.number;
     }
 
     function propose(

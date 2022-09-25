@@ -76,29 +76,38 @@ contract GolomTrader is Ownable, ReentrancyGuard {
     // events
     event NonceIncremented(address indexed maker, uint256 newNonce);
 
-    event OrderFilled(
-        address indexed maker,
-        address indexed taker,
-        uint256 indexed orderType,
-        bytes32 orderHash,
-        uint256 price
-    );
-
     // event OrderFilled(
     //     address indexed maker,
     //     address indexed taker,
     //     uint256 indexed orderType,
     //     bytes32 orderHash,
-    //     address collection,
-    //     uint256 tokenId,
-    //     uint256 price,
-    //     uint256 quantity,
-    //     address reservedAddress,
-    //     Payment exchange,
-    //     Payment prePayment,
-    //     Payment postPayment,
-    //     Payment refererr
+    //     uint256 price
     // );
+
+    event OrderFilled(
+        address indexed maker,
+        address indexed taker,
+        uint256 indexed orderType,
+        bytes32 orderHash,
+        address collection,
+        uint256 tokenId,
+        uint256 price,
+        uint256 quantity,
+        address reservedAddress,
+        Payment exchange,
+        Payment prePayment,
+        Payment postPayment,
+        Payment refererr
+    );
+
+    struct EmitEventParams {
+        Order o;
+        Payment p;
+        address _user;
+        bytes32 _hashStruct;
+        uint256 _amount;
+        address _referrer;
+    }
 
     event OrderCancelled(bytes32 indexed orderHash);
 
@@ -286,8 +295,37 @@ contract GolomTrader is Ownable, ReentrancyGuard {
         payEther(p.paymentAmt, p.paymentAddress);
 
         distributor.addFee([o.signer, o.exchange.paymentAddress], ((o.totalAmt * 50 * amount) / 10000));
-        emit OrderFilled(o.signer, msg.sender, 0, hashStruct, o.totalAmt * amount);
-        // emit OrderFilled(o.signer, msg.sender, 0, hashStruct, o.collection, o.tokenId, o.totalAmt, amount, o.reservedAddress, o.exchange, o.prePayment, p, Payment(o.refererrAmt,referrer));
+
+        // emit OrderFilled(o.signer, msg.sender, 0, hashStruct, o.totalAmt * amount);
+
+        emitOrderFilled(
+            EmitEventParams({
+                o: o,
+                p: p,
+                _user: msg.sender,
+                _hashStruct: hashStruct,
+                _amount: amount,
+                _referrer: referrer
+            })
+        );
+    }
+
+    function emitOrderFilled(EmitEventParams memory params) internal {
+        emit OrderFilled(
+            params.o.signer,
+            params._user,
+            0,
+            params._hashStruct,
+            params.o.collection,
+            params.o.tokenId,
+            params.o.totalAmt,
+            params._amount,
+            params.o.reservedAddress,
+            params.o.exchange,
+            params.o.prePayment,
+            params.p,
+            Payment(params.o.refererrAmt, params._referrer)
+        );
     }
 
     /// @dev function to fill a signed order of ordertype 1 also has a payment param in case the taker wants
@@ -322,7 +360,17 @@ contract GolomTrader is Ownable, ReentrancyGuard {
             ERC1155 nftcontract = ERC1155(o.collection);
             nftcontract.safeTransferFrom(msg.sender, o.signer, o.tokenId, amount, '');
         }
-        emit OrderFilled(msg.sender, o.signer, 1, hashStruct, o.totalAmt * amount);
+
+        emitOrderFilled(
+            EmitEventParams({
+                o: o,
+                p: p,
+                _user: msg.sender,
+                _hashStruct: hashStruct,
+                _amount: amount,
+                _referrer: referrer
+            })
+        );
         _settleBalances(o, amount, referrer, p);
     }
 
@@ -386,7 +434,16 @@ contract GolomTrader is Ownable, ReentrancyGuard {
             ERC1155 nftcontract = ERC1155(o.collection);
             nftcontract.safeTransferFrom(msg.sender, o.signer, tokenId, amount, '');
         }
-        emit OrderFilled(msg.sender, o.signer, 2, hashStruct, o.totalAmt * amount);
+        emitOrderFilled(
+            EmitEventParams({
+                o: o,
+                p: p,
+                _user: msg.sender,
+                _hashStruct: hashStruct,
+                _amount: amount,
+                _referrer: referrer
+            })
+        );
         _settleBalances(o, amount, referrer, p);
     }
 

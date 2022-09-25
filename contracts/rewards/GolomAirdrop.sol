@@ -45,7 +45,7 @@ interface IGolomTrader {
     }
 }
 
-contract GolomAidrop is Pausable, ReentrancyGuard, Ownable {
+contract GolomAirdrop is Pausable, ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable token;

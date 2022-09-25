@@ -82,8 +82,10 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
             // get old checkpoints
             Checkpoint memory oldCheckpoints = checkpoints[toTokenId][nCheckpoints - 1];
             // add new token to the array by creating fixed size array
+
             uint256[] memory a = new uint256[](oldCheckpoints.delegatedTokenIds.length + 1);
-            a[oldCheckpoints.delegatedTokenIds.length + 1] = tokenId;
+
+            a[oldCheckpoints.delegatedTokenIds.length] = tokenId;
             // write the checkpoint
             _writeCheckpoint(toTokenId, nCheckpoints, a);
         } else {
@@ -231,15 +233,6 @@ contract VoteEscrow is VoteEscrowCore, Ownable {
         Checkpoint storage latestCheckpoints = checkpoints[toTokenId][nCheckpoints - 1];
         _writeCheckpoint(tokenId, nCheckpoints, latestCheckpoints.delegatedTokenIds);
     }
-
-    // /// @notice Remove delegation by user
-    // function removeDelegationByOwner(uint256 delegatedTokenId, uint256 ownerTokenId) external {
-    //     require(ownerOf(ownerTokenId) == msg.sender, 'VEDelegation: Not allowed');
-    //     uint256 nCheckpoints = numCheckpoints[delegatedTokenId];
-    //     Checkpoint storage checkpoint = checkpoints[delegatedTokenId][nCheckpoints - 1];
-    //     removeElement(checkpoint.delegatedTokenIds, delegatedTokenId);
-    //     _writeCheckpoint(ownerTokenId, nCheckpoints, checkpoint.delegatedTokenIds);
-    // }
 
     /// @dev Exeute transfer of a NFT.
     ///      Throws unless `msg.sender` is the current owner, an authorized operator, or the approved

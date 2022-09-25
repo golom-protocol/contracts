@@ -4,6 +4,8 @@ pragma solidity 0.8.11;
 
 import '@openzeppelin/contracts/utils/Context.sol';
 
+import 'hardhat/console.sol';
+
 abstract contract Ownable is Context {
     address public owner;
     address public pendingOwner;
@@ -23,6 +25,7 @@ abstract contract Ownable is Context {
 
     /// @notice setup pending owner
     function changeOwner(address _newOwner) public onlyOwner {
+        console.log('msg.sender', msg.sender);
         pendingOwner = _newOwner;
     }
 
