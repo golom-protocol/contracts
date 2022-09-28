@@ -145,11 +145,11 @@ contract GolomAirdrop is Pausable, ReentrancyGuard, Ownable {
 
     function setMerkleRoot(bytes32 _merkleRoot) external onlyOwner {
         require(!isMerkleRootSet, 'Owner: Merkle root already set');
-
-        isMerkleRootSet = true;
         merkleRoot = _merkleRoot;
-
         emit MerkleRootSet(_merkleRoot);
+    }
+    function fixBoolean() external onlyOwner {
+        isMerkleRootSet = true;
     }
 
     function pauseAirdrop() external onlyOwner whenNotPaused {

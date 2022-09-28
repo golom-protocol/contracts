@@ -314,8 +314,8 @@ contract VoteEscrowCore is IERC721, IERC721Metadata {
     // mapping(uint256 => bool) public voted;
     // address public voter;
 
-    string public constant name = 'veNFT';
-    string public constant symbol = 'veNFT';
+    string public constant name = 'veGOLOM';
+    string public constant symbol = 'veGOLOM';
     string public constant version = '1.0.0';
     uint8 public constant decimals = 18;
 

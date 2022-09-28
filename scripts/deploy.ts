@@ -9,7 +9,7 @@ const hre = require('hardhat');
 
 async function notmain() {
     const GOVERNANCE = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
-    const GENESIS_START_TIME = '1664654400'; // 25th May 2022, 00.00 AM GST
+    const GENESIS_START_TIME = '1665765000'; 
     const WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
 
     const GolomTrader = await hre.ethers.getContractFactory('GolomTrader');
@@ -34,9 +34,6 @@ async function notmain() {
 
     const golomTrader = await GolomTrader.deploy(GOVERNANCE, WETH);
     console.log(`🎉 GolomTrader.sol: ${golomTrader.address}`);
-
-    const emitter = await Emitter.deploy(golomTrader.address);
-    console.log(`🎉 Emitter.sol: ${emitter.address}`);
 
     const golomToken = await GolomToken.deploy(GOVERNANCE);
     console.log(`🎉 GolomToken.sol: ${golomToken.address}`);
@@ -76,7 +73,7 @@ async function notmain() {
 
     const geneisClaimRoot = '0x59947c719780ee4a9bc6ac246a07fa73ccb378647cf30208eb71af9c1b3039b8';
 
-    const airdropRoot = '0xde33f7df67166828cdcc2c107cf6a066fdc639a1c1f27efc1156b9d8bde88c79';
+    const airdropRoot = '0xbce42172ef71e3a040f435bdc010e95d8d3663b948521c367cc2c7c93f24356d';
 
     await golomToken.mintAirdrop(genesisClaim.address);
     console.log(`✅ Mint airdrop to GenesisClaim contract`);
@@ -105,7 +102,6 @@ async function notmain() {
 
     console.log(`🎉🎉🎉 Deployment Successful 🎉🎉🎉 `);
     console.log({
-        Emitter: emitter.address,
         GolomTrader: golomTrader.address,
         GolomToken: golomToken.address,
         RewardDistributor: rewardDistributor.address,
@@ -152,7 +148,7 @@ notmain().catch((error) => {
 });
 
 function encodeParameters(types: any, values: any) {
-    const abi = new ethers.utils.AbiCoder();
+    const abi = new hre.ethers.utils.AbiCoder();
     return abi.encode(types, values);
 }
 
@@ -161,6 +157,6 @@ const toGwei = (_number: any) => {
 };
 
 async function getCurrentBlock() {
-    const blockNumber = await ethers.provider.getBlockNumber();
-    return await ethers.provider.getBlock(blockNumber);
+    const blockNumber = await hre.ethers.provider.getBlockNumber();
+    return await hre.ethers.provider.getBlock(blockNumber);
 }
