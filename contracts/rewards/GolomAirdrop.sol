@@ -191,7 +191,7 @@ contract GolomAirdrop is Pausable, ReentrancyGuard, Ownable {
         IGolomTrader.Order calldata order,
         bool lockTokens
     ) external {
-        require(isMerkleRootSet, 'Airdrop: Merkle root not set');
+        // require(isMerkleRootSet, 'Airdrop: Merkle root not set');
         require(amount <= MAXIMUM_AMOUNT_TO_CLAIM, 'Airdrop: Amount too high');
         require(block.timestamp <= endTimestamp, 'Airdrop: Too late to claim');
 
